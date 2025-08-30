@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Busqueda from "./Busqueda";
 
 function App() {
   const [message, setMessage] = useState("Cargando...");
@@ -16,8 +17,9 @@ function App() {
 
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Frontend con Vite + React</h1>
+      <h1>Estructuras de datos</h1>
       <p>{message}</p>
+      <Busqueda />
     </div>
   );
 }
