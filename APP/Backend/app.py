@@ -27,9 +27,9 @@ app.include_router(busqueda_router, prefix="/busquedas")
 
 # Modelo de la petición
 class SearchRequest(BaseModel):
-    algoritmo: str      # Ejemplo: "lineal"
-    array: List[int]    # Lista de números
-    target: int         # Número a buscar
+    algoritmo: str      
+    array: List[int]    
+    target: int         
 
 # Endpoint POST /buscar
 @app.post("/buscar")

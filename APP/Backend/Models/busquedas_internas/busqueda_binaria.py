@@ -1,18 +1,31 @@
+from typing import List, Optional
+
 class BusquedaBinaria:
-    def ejecutar(self, lista, valor):
-        pasos = []
-        inicio, fin = 0, len(lista) - 1
+    def ejecutar(self, array: List[int], target: int) -> dict:
+        """
+        Realiza búsqueda binaria en un array (ordenado automáticamente).
+        Retorna un diccionario con la posición y el array ordenado.
+        """
+        array_ordenado = sorted(array)
+
+        inicio = 0
+        fin = len(array_ordenado) - 1
+
         while inicio <= fin:
-            mid = (inicio + fin) // 2
-            pasos.append(f"Comparando {valor} con {lista[mid]} en índice {mid}")
-            if lista[mid] == valor:
-                pasos.append(f"Encontrado en índice {mid}")
-                return {"resultado": mid, "pasos": pasos}
-            elif lista[mid] < valor:
-                pasos.append("Descartando mitad izquierda")
-                inicio = mid + 1
+            medio = (inicio + fin) // 2
+            if array_ordenado[medio] == target:
+                return {
+                    "posicion": medio,
+                    "array_ordenado": array_ordenado,
+                    "encontrado": True
+                }
+            elif array_ordenado[medio] < target:
+                inicio = medio + 1
             else:
-                pasos.append("Descartando mitad derecha")
-                fin = mid - 1
-        pasos.append("Valor no encontrado")
-        return {"resultado": None, "pasos": pasos}
+                fin = medio - 1
+
+        return {
+            "posicion": None,
+            "array_ordenado": array_ordenado,
+            "encontrado": False
+        }
