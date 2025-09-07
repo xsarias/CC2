@@ -18,7 +18,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "🚀 Servidor funcionando correctamente!"}
+    return {"message": "¡Bienvenido!"}
 
 
 # Incluir los controladores como rutas

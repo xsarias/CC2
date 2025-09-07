@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Busqueda from "./Busqueda";
-import IngresarDatos from "./IngresarDatos";
-
+import Secuencial from "./Secuencial";
+import Binaria from "./Binaria";
+import Hash from "./Hash";
 function App() {
   const [message, setMessage] = useState("Cargando...");
-  const [tab, setTab] = useState("datos");
-  const [datos, setDatos] = useState([]); // array global
+  const [tab, setTab] = useState("home");
+  const [datos, setDatos] = useState([]);
 
   useEffect(() => {
     axios
@@ -27,50 +28,35 @@ function App() {
         color: "white",
       }}
     >
-      <h1>Estructuras de datos</h1>
-      <p>{message}</p>
-
-      <div style={{ marginBottom: "20px" }}>
-        <button
-          onClick={() => setTab("datos")}
-          style={{
-            backgroundColor: "#4e127bff",
-            color: "white",
-            padding: "8px 16px",
-            marginRight: "10px",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            transition: "0.3s",
-          }}
-        >
-          Ingresar Datos
-        </button>
-
-        <button
-          onClick={() => setTab("busqueda")}
-          style={{
-            backgroundColor: "#4e127bff",
-            color: "white",
-            padding: "8px 16px",
-            marginRight: "10px",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            transition: "0.3s",
-          }}
-        >
-          Búsqueda
-        </button>
-      </div>
-
-
-      {tab === "datos" && (
-        <IngresarDatos onDataChange={(arr) => setDatos(arr)} />
+      {/* Home */}
+      {tab === "home" && (
+        <>
+          <h1 className="titulo">Ciencias de la Computación II</h1>
+          <p>{message}</p>
+          <div className="app-container">
+            <button onClick={() => setTab("busqueda")}>Búsquedas</button>
+            <button onClick={() => setTab("grafos")}>Grafos</button>
+          </div>
+        </>
       )}
-      {tab === "busqueda" && (
-        <Busqueda array={datos} />
+
+      {/* Menú de algoritmos */}
+      {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} />}
+
+      {/* Pantallas específicas */}
+      {tab === "secuencial" && (
+        <Secuencial array={datos} onBack={() => setTab("busqueda")} />
       )}
+
+      {tab === "binaria" && (
+        <Binaria array={datos} onBack={() => setTab("busqueda")} />
+      )}
+
+      {tab === "hash" && (
+        <Hash onBack={() => setTab("busqueda")} />
+      )}
+
+      {tab === "grafos" && <h2>Aquí irá la sección de grafos 🚀</h2>}
     </div>
   );
 }

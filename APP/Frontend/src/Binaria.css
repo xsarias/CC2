@@ -1,0 +1,29 @@
+.tabla-binaria {
+  margin: 20px auto;
+  border-collapse: collapse;
+  border: 1px solid #ccc;
+  width: 60%;
+  background: white;
+  color: black;
+}
+
+.tabla-binaria th,
+.tabla-binaria td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.resaltado-mid {
+  background-color: #fff3cd; /* Amarillo */
+  font-weight: bold;
+}
+
+.resaltado-rango {
+  background-color: #e2e3e5; /* Gris claro */
+}
+
+.resaltado-found {
+  background-color: #d4edda; /* Verde */
+  font-weight: bold;
+}

@@ -1,0 +1,43 @@
+.contenedor {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.input-chico {
+  width: 50px;
+  margin-left: 10px;
+}
+
+.input-rango {
+  width: 60px;
+  margin-left: 10px;
+}
+
+.input-clave {
+  margin-right: 10px;
+  padding: 5px;
+}
+
+.boton {
+  padding: 5px 10px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+.tabla-claves {
+  margin: 20px auto;
+  border-collapse: collapse;
+  border: 1px solid #ccc;
+  background: white;
+  color: black;
+}
+
+.tabla-claves th, .tabla-claves td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.tabla-claves th {
+  background: #f0f0f0;
+}
