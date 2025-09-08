@@ -115,7 +115,7 @@ function IngresarDatos({ onDataChange }) {
             type="number"
             value={tamanoEstructura}
             onChange={(e) => setTamanoEstructura(parseInt(e.target.value))}
-            min={array.length} 
+            min={array.length}
             className="input-chico"
           />
         </label>
