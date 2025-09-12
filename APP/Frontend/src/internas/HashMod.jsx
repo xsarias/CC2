@@ -1,5 +1,6 @@
 import { useState } from "react";
-import "./HashMod.css";
+import "../App.css";
+import "./IngresarDatos.css";
 
 function HashMod({ onDataChange, onBack }) {
     const [tabla, setTabla] = useState(Array(5).fill(null));
@@ -9,62 +10,130 @@ function HashMod({ onDataChange, onBack }) {
     const [rangoMax, setRangoMax] = useState(99);
     const [tamanoEstructura, setTamanoEstructura] = useState(5);
     const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
+    const [metodoColision, setMetodoColision] = useState("lineal"); // 👈 menú de colisiones
 
-    // Función hash básica (módulo)
+    // --- Función hash básica (módulo)
     const hash = (key) => {
         const num = parseInt(key, 10);
         return isNaN(num) ? 0 : num % tamanoEstructura;
     };
 
-    // Agregar clave validando
+    // --- Resolver colisión según el método elegido
+    const resolverColision = (indexInicial) => {
+        let i = 0;
+        let index = indexInicial;
+
+        if (metodoColision === "lineal") {
+            while (tabla[index] !== null) {
+                i++;
+                index = (indexInicial + i) % tamanoEstructura;
+                if (i >= tamanoEstructura) return -1; // tabla llena
+            }
+        } 
+        else if (metodoColision === "cuadratica") {
+            while (tabla[index] !== null) {
+                i++;
+                index = (indexInicial + i * i) % tamanoEstructura;
+                if (i >= tamanoEstructura) return -1;
+            }
+        }
+        else if (metodoColision === "dobleHash") {
+            const h2 = 1 + (indexInicial % (tamanoEstructura - 1));
+            while (tabla[index] !== null) {
+                i++;
+                index = (indexInicial + i * h2) % tamanoEstructura;
+                if (i >= tamanoEstructura) return -1;
+            }
+        }
+        else if (metodoColision === "encadenamiento" || metodoColision === "anidado") {
+            // Para estos métodos, usaremos listas en cada celda
+            if (!Array.isArray(tabla[index])) tabla[index] = [];
+            return index; // usamos el índice original, pero lo tratamos como lista
+        }
+
+        return index;
+    };
+
+    // --- Agregar clave validando duplicados y colisiones
     const agregarClave = () => {
         if (clave.length !== tamanoClave) {
             alert(`La clave debe tener exactamente ${tamanoClave} dígitos`);
             return;
         }
+
         const num = parseInt(clave, 10);
         if (isNaN(num) || num < rangoMin || num > rangoMax) {
             alert(`La clave debe estar en el rango ${rangoMin} - ${rangoMax}`);
             return;
         }
 
-        const index = hash(clave);
-        if (tabla[index] !== null) {
-            alert(`⚠️ Colisión: la posición ${index + 1} ya está ocupada por ${tabla[index]}`);
+        // Evitar duplicados
+        if (tabla.some((v) => (Array.isArray(v) ? v.includes(clave) : v === clave))) {
+            alert(`❌ La clave ${clave} ya existe en la tabla`);
             return;
         }
 
+        const indexInicial = hash(clave);
+        let index = indexInicial;
+
+        if (tabla[index] !== null) {
+            // Colisión: resolver según el método elegido
+            index = resolverColision(indexInicial);
+            if (index === -1) {
+                alert("⚠️ La tabla está llena, no se pudo insertar");
+                return;
+            }
+        }
+
         const nuevaTabla = [...tabla];
-        nuevaTabla[index] = clave;
+        if (metodoColision === "encadenamiento" || metodoColision === "anidado") {
+            nuevaTabla[index] = [...(nuevaTabla[index] || []), clave];
+        } else {
+            nuevaTabla[index] = clave;
+        }
+
         setTabla(nuevaTabla);
         setClave("");
         setResultadoBusqueda(null);
         onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura });
     };
 
-    // Buscar clave usando hash
+    // --- Buscar clave usando hash
     const buscarClave = () => {
         if (!clave) {
             alert("Por favor ingresa una clave para buscar.");
             return;
         }
 
-        const index = hash(clave);
-        if (tabla[index] === clave) {
-            setResultadoBusqueda(`✅ La clave ${clave} se encontró en la posición ${index + 1}`);
-        } else {
-            setResultadoBusqueda(`❌ La clave ${clave} NO se encontró en la tabla (posición esperada: ${index + 1})`);
+        const indexInicial = hash(clave);
+        let encontrado = false;
+
+        if (Array.isArray(tabla[indexInicial])) {
+            encontrado = tabla[indexInicial].includes(clave);
+        } else if (tabla[indexInicial] === clave) {
+            encontrado = true;
         }
+
+        setResultadoBusqueda(
+            encontrado
+                ? `✅ La clave ${clave} se encontró (posición base: ${indexInicial + 1})`
+                : `❌ La clave ${clave} NO se encontró en la tabla`
+        );
     };
 
-    const borrarClave = (index) => {
+    const borrarClave = (index, valor = null) => {
         const nuevaTabla = [...tabla];
-        nuevaTabla[index] = null;
+        if (Array.isArray(nuevaTabla[index])) {
+            nuevaTabla[index] = nuevaTabla[index].filter((v) => v !== valor);
+            if (nuevaTabla[index].length === 0) nuevaTabla[index] = null;
+        } else {
+            nuevaTabla[index] = null;
+        }
         setTabla(nuevaTabla);
         onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura });
     };
 
-    // Guardar archivo JSON
+    // --- Guardar y recuperar archivo JSON
     const guardarArchivo = () => {
         const nombreArchivo = prompt("Nombre para el archivo (sin extensión):");
         if (!nombreArchivo) return;
@@ -76,6 +145,7 @@ function HashMod({ onDataChange, onBack }) {
             rangoMax,
             tamanoEstructura,
             valores: tabla,
+            metodoColision,
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -87,7 +157,6 @@ function HashMod({ onDataChange, onBack }) {
         URL.revokeObjectURL(url);
     };
 
-    // Recuperar archivo JSON
     const recuperarArchivo = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -106,13 +175,9 @@ function HashMod({ onDataChange, onBack }) {
                 setRangoMin(Number(data.rangoMin) || 0);
                 setRangoMax(Number(data.rangoMax) || 99);
                 setTamanoEstructura(Number(data.tamanoEstructura) || data.valores.length);
+                setMetodoColision(data.metodoColision || "lineal");
 
-                onDataChange?.(data.valores, {
-                    tamanoClave: Number(data.tamanoClave) || 2,
-                    rangoMin: Number(data.rangoMin) || 0,
-                    rangoMax: Number(data.rangoMax) || 99,
-                    tamanoEstructura: Number(data.tamanoEstructura) || data.valores.length,
-                });
+                onDataChange?.(data.valores, data);
             } catch (error) {
                 alert("Error al leer el archivo: JSON inválido");
                 console.error(error);
@@ -123,11 +188,28 @@ function HashMod({ onDataChange, onBack }) {
     };
 
     return (
-
         <div className="contenedor">
-            <h3>🔑 Tabla Hash (módulo)</h3>
+            <h3>🔑 Tabla Hash (MOD)</h3>
 
             {/* Configuración */}
+            <div style={{ marginBottom: "10px" }}>
+                <label>
+                    Método de Colisión:
+                    <select
+                        value={metodoColision}
+                        onChange={(e) => setMetodoColision(e.target.value)}
+                        className="input-chico"
+                    >
+                        <option value="lineal">Prueba lineal</option>
+                        <option value="cuadratica">Prueba cuadrática</option>
+                        <option value="dobleHash">Doble hashing</option>
+                        <option value="encadenamiento">Encadenamiento</option>
+                        <option value="anidado">Arreglo anidado</option>
+                    </select>
+                </label>
+            </div>
+
+            {/* Resto de la configuración igual que antes */}
             <div style={{ marginBottom: "10px" }}>
                 <label>
                     Tamaño de la estructura:
@@ -187,79 +269,58 @@ function HashMod({ onDataChange, onBack }) {
                     maxLength={tamanoClave}
                     className="input-clave"
                 />
-                <button onClick={agregarClave} className="boton">➕ Insertar</button>
+                <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
                 <button onClick={buscarClave} className="boton" style={{ marginLeft: "10px" }}>
                     🔍 Buscar
                 </button>
             </div>
-
-            {/* Ecuación hash */}
-            <div style={{ margin: "10px 0" }}>
-                <strong style={{ color: "#0066cc" }}>Función Hash (MOD):</strong>
-                <span style={{
-                    marginLeft: "8px",
-                    fontFamily: "monospace",
-                    color: "#cc0000",
-                    fontWeight: "bold",
-                    fontSize: 12
-                }}>
-                    h(k) = k mod {tamanoEstructura}
-                </span>
-            </div>
-
-
-            {/* Resultado de búsqueda */}
-            {resultadoBusqueda && (
-                <div
-                    style={{
-                        marginTop: "12px",
-                        padding: "10px 15px",
-                        borderRadius: "8px",
-                        backgroundColor: "#1e1e2f",
-                        color: "#00ffcc",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                    }}
-                >
-                    🔍 {resultadoBusqueda}
-                </div>
-            )}
 
             {/* Tabla hash */}
             <table className="tabla-claves">
                 <thead>
                     <tr>
                         <th>Índice</th>
-                        <th>Clave</th>
+                        <th>Clave(s)</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {tabla.map((valor, i) => (
                         <tr key={i}>
-                            <td>{i + 1}</td> {/* 👈 visualmente empieza en 1 */}
-                            <td>{valor ?? <em>vacío</em>}</td>
+                            <td>{i + 1}</td>
                             <td>
-                                {valor && (
-                                    <button onClick={() => borrarClave(i)} className="boton">🗑 Borrar</button>
-                                )}
+                                {Array.isArray(valor)
+                                    ? valor.join(", ")
+                                    : valor ?? <em>vacío</em>}
+                            </td>
+                            <td>
+                                {Array.isArray(valor)
+                                    ? valor.map((v) => (
+                                        <button
+                                            key={v}
+                                            onClick={() => borrarClave(i, v)}
+                                            className="boton_borrar"
+                                        >
+                                            🗑 {v}
+                                        </button>
+                                    ))
+                                    : valor && (
+                                        <button onClick={() => borrarClave(i)} className="boton_borrar">
+                                            🗑 Borrar
+                                        </button>
+                                    )}
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
 
+            {/* Botones finales */}
             <div style={{ marginTop: "10px" }}>
                 <button onClick={guardarArchivo} className="boton">💾 Guardar archivo</button>
                 <label style={{ cursor: "pointer", marginLeft: "10px" }} className="boton">
                     📂 Cargar archivo
-                    <input
-                        type="file"
-                        accept=".json"
-                        onChange={recuperarArchivo}
-                        style={{ display: "none" }}
-                    />
+                    <input type="file" accept=".json" onChange={recuperarArchivo} style={{ display: "none" }} />
                 </label>
                 <button onClick={onBack} style={{ marginLeft: "10px" }} className="boton">
                     ⬅ Volver

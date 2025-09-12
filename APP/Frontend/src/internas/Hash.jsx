@@ -2,7 +2,9 @@ import { useState } from "react";
 import HashMod from "./HashMod";
 import HashCuadrado from "./HashCuadrado";
 import HashTruncamiento from "./HashTruncamiento";
-//import HashPlegamiento from "./HashPlegamiento";
+import "../App.css";
+
+import HashPlegamiento from "./HashPlegamiento";
 
 function Hash({ onBack }) {
     const [opcion, setOpcion] = useState(null);
@@ -18,22 +20,22 @@ function Hash({ onBack }) {
                 <div>
                     <p>Selecciona una función hash:</p>
 
-                    <button onClick={() => setOpcion("mod")} className="boton">
+                    <button onClick={() => setOpcion("mod")} className="botones">
                         ➗ Función MOD
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("cuadrado")} className="boton">
+                    <button onClick={() => setOpcion("cuadrado")} className="botones">
                         🟦 Función del Cuadrado
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("truncamiento")} className="boton">
+                    <button onClick={() => setOpcion("truncamiento")} className="botones">
                         ✂️ Función de Truncamiento
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("plegamiento")} className="boton">
+                    <button onClick={() => setOpcion("plegamiento")} className="botones">
                         📐 Función de Plegamiento
                     </button>
                     <br></br>

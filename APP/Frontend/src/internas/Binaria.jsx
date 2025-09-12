@@ -1,6 +1,6 @@
 import { useState } from "react";
 import IngresarDatos from "./IngresarDatos";
-import "./App.css"
+import "../App.css"
 
 function Binaria({ array, onBack }) {
   const [datos, setDatos] = useState(array || []);

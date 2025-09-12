@@ -58,22 +58,23 @@
   transition: 0.3s;
 }
 
-.boton_.boton_borrar {
+.boton_borrar:hover {
   background-color: #c0392b; /* rojo más oscuro al pasar el mouse */
 }
 
 
 .boton_agregar {
-  background-color: #50d612; /* rojo */
-  color: rgb(61, 56, 56);             /* texto en blanco */
+  background-color: #30f388;
+  color: #3d3838;
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   transition: 0.3s;
-  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 
+               'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
-.boton_agregar {
-  background-color: #30f388; /* rojo más oscuro al pasar el mouse */
+.boton_agregar:hover {
+  background-color: #1ecf6a; /* un poco más oscuro al pasar el mouse */
 }

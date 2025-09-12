@@ -1,4 +1,3 @@
-
 function Busqueda({ onSelect }) {
   return (
     <div style={{ textAlign: "center" }}>

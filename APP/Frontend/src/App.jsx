@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Busqueda from "./Busqueda";
-import Secuencial from "./Secuencial";
-import Binaria from "./Binaria";
-import Hash from "./Hash";
+import Secuencial from "./internas/Secuencial";
+import Binaria from "./internas/Binaria";
+import Hash from "./internas/Hash";
 import "./App.css"
 function App() {
   const [message, setMessage] = useState("Cargando...");
