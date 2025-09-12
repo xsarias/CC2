@@ -6,23 +6,23 @@ function Busqueda({ onSelect }) {
 
       <div style={{ marginBottom: "20px" }}>
         <h3>Internas</h3>
-        <button onClick={() => onSelect("secuencial")} className="btn-chip azul">
+        <button onClick={() => onSelect("secuencial")} className="botones">
           Secuencial
         </button>
-        <button onClick={() => onSelect("binaria")} className="btn-chip naranja">
+        <button onClick={() => onSelect("binaria")} className="botones">
           Binaria
         </button>
-        <button onClick={() => onSelect("hash")} className="btn-chip verde">
+        <button onClick={() => onSelect("hash")} className="botones">
           Hash
         </button>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
         <h3>Externas</h3>
-        <button onClick={() => onSelect("externa1")} className="btn-chip gris">
+        <button onClick={() => onSelect("externa1")} className="botones">
           Externa 1
         </button>
-        <button onClick={() => onSelect("externa2")} className="btn-chip gris">
+        <button onClick={() => onSelect("externa2")} className="botones">
           Externa 2
         </button>
       </div>

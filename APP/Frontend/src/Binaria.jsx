@@ -1,5 +1,6 @@
 import { useState } from "react";
 import IngresarDatos from "./IngresarDatos";
+import "./App.css"
 
 function Binaria({ array, onBack }) {
   const [datos, setDatos] = useState(array || []);
@@ -120,7 +121,7 @@ function Binaria({ array, onBack }) {
           <h3>🛠 Crear estructura</h3>
           <IngresarDatos onDataChange={(arr) => setDatos(arr)} />
           <button onClick={onBack}>⬅ Volver</button>
-          <button onClick={() => setFase("buscar")}>➡ Ir a búsqueda</button>
+          <button onClick={() => setFase("buscar")} className="botones" >➡ Ir a búsqueda</button>
         </>
       )}
 
@@ -137,7 +138,7 @@ function Binaria({ array, onBack }) {
           <button onClick={buscar} disabled={buscando}>
             {buscando ? "Buscando..." : "Buscar"}
           </button>
-          <button onClick={() => setFase("crear")} style={{ marginLeft: "10px" }} disabled={buscando}>
+          <button onClick={() => setFase("crear")} className="botones_nav"  style={{ marginLeft: "10px" }} disabled={buscando}>
             ⬅ Volver a creación
           </button>
 

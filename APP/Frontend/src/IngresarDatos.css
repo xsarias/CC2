@@ -22,8 +22,14 @@
   padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-}
+  background-color: #22777a; /* rojo */
+  color: rgb(255, 255, 255);
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;  
 
+}
+.boton_agregar {
+  background-color: #69bbf1; /* rojo más oscuro al pasar el mouse */
+}
 .tabla-claves {
   margin: 20px auto;
   border-collapse: collapse;
@@ -40,4 +46,34 @@
 
 .tabla-claves th {
   background: #f0f0f0;
+}
+
+.boton_borrar {
+  background-color: #e74c3c; /* rojo */
+  color: white;             /* texto en blanco */
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.boton_.boton_borrar {
+  background-color: #c0392b; /* rojo más oscuro al pasar el mouse */
+}
+
+
+.boton_agregar {
+  background-color: #50d612; /* rojo */
+  color: rgb(61, 56, 56);             /* texto en blanco */
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.boton_agregar {
+  background-color: #30f388; /* rojo más oscuro al pasar el mouse */
 }

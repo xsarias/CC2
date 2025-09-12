@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/xmara/UD/CC2/APP/Backend/env
+set -gx VIRTUAL_ENV /home/xmara_saa/Escritorio/UD/CC2/APP/Backend/env
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

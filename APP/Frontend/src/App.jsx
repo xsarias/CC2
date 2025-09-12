@@ -4,6 +4,7 @@ import Busqueda from "./Busqueda";
 import Secuencial from "./Secuencial";
 import Binaria from "./Binaria";
 import Hash from "./Hash";
+import "./App.css"
 function App() {
   const [message, setMessage] = useState("Cargando...");
   const [tab, setTab] = useState("home");
@@ -17,39 +18,30 @@ function App() {
   }, []);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#292727ff",
-        color: "white",
-      }}
+    <div className="contenedor"
     >
       {/* Home */}
       {tab === "home" && (
         <>
           <h1 className="titulo">Ciencias de la Computación II</h1>
-          <p>{message}</p>
+          <p className= "mensaje">{message}</p>
           <div className="app-container">
-            <button onClick={() => setTab("busqueda")}>Búsquedas</button>
-            <button onClick={() => setTab("grafos")}>Grafos</button>
+            <button onClick={() => setTab("busqueda")} className="botones">Búsquedas</button>
+            <button onClick={() => setTab("grafos")} className="botones">Grafos</button>
           </div>
         </>
       )}
 
       {/* Menú de algoritmos */}
-      {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} />}
+      {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} className="botones" />}
 
       {/* Pantallas específicas */}
       {tab === "secuencial" && (
-        <Secuencial array={datos} onBack={() => setTab("busqueda")} />
+        <Secuencial array={datos} onBack={() => setTab("busqueda")} className="botones" />
       )}
 
       {tab === "binaria" && (
-        <Binaria array={datos} onBack={() => setTab("busqueda")} />
+        <Binaria array={datos} onBack={() => setTab("busqueda")} className="botones"  />
       )}
 
       {tab === "hash" && (

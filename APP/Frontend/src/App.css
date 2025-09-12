@@ -48,7 +48,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: system-ui, sans-serif;
-  background: linear-gradient(-45deg, #4e127b, #ff4e50, #1fddff, #22c55e);
+  background: linear-gradient(-45deg, #a389b8, #383535, #afd8df, #743b5c);
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
 }
@@ -60,11 +60,13 @@ body {
 }
 
 .titulo {
-  font-size: 3rem;
+  font-size: 5rem;
   font-weight: bold;
   opacity: 0;
   transform: translateY(-20px);
   animation: fadeSlide 1.5s ease forwards;
+  font-family: cursive;
+  color: rgb(232, 229, 238);
 }
 @keyframes fadeZoom {
   0% {
@@ -76,12 +78,47 @@ body {
     transform: scale(1);
   }
 }
+.botones {
+  margin-right: 10px;
+  background-color: #6a1b9a;   /* morado elegante */
+  color: white;               /* texto blanco */
+  padding: 10px 18px;          /* espacio interno */
+  border: none;                /* sin borde duro */
+  border-radius: 8px;          /* esquinas redondeadas */
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* sombra sutil */
+  transition: all 0.3s ease;
+}
 
+.botones:hover {
+  background-color: #4e127b;  /* un poco más oscuro al pasar */
+  transform: translateY(-2px); /* pequeño efecto de elevación */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
 
+.mensaje {
+  font-size: 2rem;
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: fadeSlide 1.5s ease forwards;
+  font-family:Georgia, 'Times New Roman', Times, serif;
+  color: rgb(250, 248, 248);
+}
 @keyframes fadeSlide {
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.contenedor {
+  background-color: rgba(39, 40, 41, 0.85); /* negro semi-transparente */
+  border-radius: 15px;                   /* bordes redondeados */
+  padding: 2rem;                         /* espacio interno */
+  margin: 2rem;                          /* margen externo */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* sombra elegante */
+  max-width: 1000px;                     /* ancho máximo */
 }
 

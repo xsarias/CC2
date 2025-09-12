@@ -165,7 +165,7 @@ function IngresarDatos({ onDataChange }) {
           maxLength={tamanoClave}
           className="input-clave"
         />
-        <button onClick={agregarClave} className="boton">➕ Agregar</button>
+        <button onClick={agregarClave} className="boton_agregar">➕ Agregar</button>
       </div>
 
       <p>{`Claves agregadas: ${array.length} / ${tamanoEstructura}`}</p>
@@ -187,7 +187,7 @@ function IngresarDatos({ onDataChange }) {
                 <td>{i + 1}</td>
                 <td>{valor}</td>
                 <td>
-                  {valor && <button onClick={() => borrarClave(i)} className="boton">🗑 Borrar</button>}
+                  {valor && <button onClick={() => borrarClave(i)} className="boton_borrar">🗑 Borrar</button>}
                 </td>
               </tr>
             );
