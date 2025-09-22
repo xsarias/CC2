@@ -5,11 +5,10 @@ function Secuencial({ array, onBack }) {
   const [datos, setDatos] = useState(array || []);
   const [target, setTarget] = useState("");
   const [foundIndex, setFoundIndex] = useState(null);
-  const [fase, setFase] = useState("crear"); 
-  const [currentIndex, setCurrentIndex] = useState(null); // índice que se está revisando
+  const [fase, setFase] = useState("crear");
+  const [currentIndex, setCurrentIndex] = useState(null);
   const [buscando, setBuscando] = useState(false);
 
-  // --- Buscar con animación ---
   const buscar = () => {
     setBuscando(true);
     setFoundIndex(null);
@@ -20,7 +19,7 @@ function Secuencial({ array, onBack }) {
       if (i >= datos.length) {
         clearInterval(interval);
         setBuscando(false);
-        setFoundIndex(-1); // no encontrado
+        setFoundIndex(-1);
         return;
       }
 
@@ -29,12 +28,12 @@ function Secuencial({ array, onBack }) {
       if (datos[i] === target) {
         clearInterval(interval);
         setBuscando(false);
-        setFoundIndex(i); // encontrado
+        setFoundIndex(i);
         return;
       }
 
       i++;
-    }, 700); // 👈 velocidad (milisegundos entre pasos)
+    }, 700);
   };
 
   return (
@@ -46,7 +45,9 @@ function Secuencial({ array, onBack }) {
           <h3>🛠 Crear estructura</h3>
           <IngresarDatos onDataChange={(arr) => setDatos(arr)} />
           <button onClick={onBack}>⬅ Volver</button>
-          <button onClick={() => setFase("buscar")}>➡ Ir a búsqueda</button>
+          <button onClick={() => setFase("buscar")} style={{ marginLeft: "10px" }}>
+            ➡ Ir a búsqueda
+          </button>
         </>
       )}
 
@@ -60,13 +61,17 @@ function Secuencial({ array, onBack }) {
             placeholder="Dato a buscar"
             disabled={buscando}
           />
-          <button onClick={buscar} disabled={buscando}>
+          <button onClick={buscar} disabled={buscando} style={{ marginLeft: "10px" }}>
             {buscando ? "Buscando..." : "Buscar"}
           </button>
-          <button onClick={() => setFase("crear")} style={{ marginLeft: "10px" }} disabled={buscando}>
+          <button
+            onClick={() => setFase("crear")}
+            style={{ marginLeft: "10px" }}
+            disabled={buscando}
+          >
             ⬅ Volver a creación
           </button>
-          <br></br>
+
           {foundIndex !== null && !buscando && (
             <div
               style={{
@@ -75,13 +80,10 @@ function Secuencial({ array, onBack }) {
                 borderRadius: "8px",
                 fontWeight: "bold",
                 display: "inline-block",
-                background: foundIndex !== -1 ? "#d4edda" : "#f8d7da",
-                color: foundIndex !== -1 ? "#155724" : "#721c24",
-                border: `1px solid ${foundIndex !== -1 ? "#c3e6cb" : "#f5c6cb"}`,
-                boxShadow: "0px 2px 5px rgba(0,0,0,0.1)",
-                opacity: 1,
-                transform: "scale(1)",
-                animation: "fadeZoom 0.5s ease-out",
+                background: foundIndex !== -1 ? "#28a745" : "#dc3545",
+                color: "#fff",
+                border: `1px solid ${foundIndex !== -1 ? "#218838" : "#c82333"}`,
+                boxShadow: "0px 2px 5px rgba(0,0,0,0.2)",
               }}
             >
               {foundIndex !== -1
@@ -90,52 +92,51 @@ function Secuencial({ array, onBack }) {
             </div>
           )}
 
-
-          <table
+          <div
             style={{
-              margin: "20px auto",
-              borderCollapse: "collapse",
-              border: "1px solid #ccc",
-              background: "white",
-              color: "black",
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "10px",
+              marginTop: "20px",
+              padding: "10px",
             }}
           >
-            <thead>
-              <tr style={{ background: "#f0f0f0" }}>
-                <th style={{ border: "1px solid #ccc", padding: "8px" }}>Posición</th>
-                <th style={{ border: "1px solid #ccc", padding: "8px" }}>Clave</th>
-              </tr>
-            </thead>
-            <tbody>
-              {datos.map((c, i) => (
-                <tr
-                  key={i}
-                  style={{
-                    background:
-                      i === foundIndex
-                        ? "lightgreen"
-                        : i === currentIndex
-                        ? "yellow"
-                        : "white",
-                  }}
-                >
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
-                    {i + 1}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
-                    {c}
-                  </td>
-                </tr>
-              ))}
-              {datos.length === 0 && (
-                <tr>
-                  <td colSpan="2" style={{ textAlign: "center", padding: "10px" }}>
-                    Estructura vacía
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            {datos.length === 0 && <p style={{ textAlign: "center" }}>Estructura vacía</p>}
+            {datos.map((c, i) => (
+              <div
+                key={i}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "6px",
+                  border: "1px solid #444",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  background:
+                    i === foundIndex
+                      ? "#28a745" // verde fuerte
+                      : i === currentIndex
+                      ? "#ffc107" // amarillo intenso
+                      : "#f0f0f0", // gris neutro
+                  color: "#000", // letra negra
+                  boxShadow:
+                    i === foundIndex
+                      ? "0 0 8px rgba(40,167,69,0.7)"
+                      : i === currentIndex
+                      ? "0 0 8px rgba(255,193,7,0.7)"
+                      : "0 2px 5px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <small style={{ fontSize: "0.7em", opacity: 0.8 }}>{i + 1}</small>
+                <span>{c}</span>
+              </div>
+            ))}
+          </div>
         </>
       )}
     </div>

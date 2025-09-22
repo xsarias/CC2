@@ -94,4 +94,45 @@ export default class Colisiones {
         }
         return false;
     }
+
+    static buscarClave(tabla, clave, metodo, tamanoEstructura) {
+        const indexBase = parseInt(clave, 10) % tamanoEstructura;
+        let i = indexBase;
+        let intento = 1;
+
+        if (metodo === "encadenamiento") {
+            let nodo = tabla[i];
+            while (nodo) {
+                if (nodo.valor === clave) return i;
+                nodo = nodo.next;
+            }
+            return -1;
+        }
+
+        if (metodo === "arreglos") {
+            const arr = tabla[i];
+            if (Array.isArray(arr)) {
+                return arr.includes(clave) ? i : -1;
+            }
+            return arr === clave ? i : -1;
+        }
+
+        // Direccionamiento abierto
+        while (tabla[i] !== null && !Array.isArray(tabla[i])) {
+            if (tabla[i] === clave) return i;
+
+            if (metodo === "lineal") i = (indexBase + intento) % tamanoEstructura;
+            else if (metodo === "cuadratica") i = (indexBase + intento * intento) % tamanoEstructura;
+            else if (metodo === "doblehash") {
+                const paso = 1 + (parseInt(clave, 10) % (tamanoEstructura - 1));
+                i = (i + paso) % tamanoEstructura;
+            }
+
+            intento++;
+            if (intento > tamanoEstructura) return -1; // no encontrado
+        }
+
+        return tabla[i] === clave ? i : -1;
+    }
+
 }

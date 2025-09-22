@@ -1,0 +1,82 @@
+/* ArbolesDigitales.css */
+.arbol-digitales-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar {
+  width: 250px; /* ancho fijo */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar input {
+  padding: 5px;
+  font-size: 16px;
+}
+
+.sidebar table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sidebar th, .sidebar td {
+  border: 1px solid #aaa;
+  padding: 4px 6px;
+  text-align: center;
+}
+
+.sidebar th {
+  background-color: #227174;
+}
+
+.volver {
+  margin-top: 10px;
+  padding: 5px 10px;
+}
+
+.arbol-grafico {
+  flex: 1; /* ocupa todo el espacio restante */
+  overflow: auto; /* scroll si el árbol es grande */
+  border: 1px solid #ccc;
+  background-color: #fefefe;
+  padding: 10px;
+  height: 500px; /* altura fija para no desbordar la página */
+}
+
+.titulo-arbol {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.construir_arbols{
+    margin-right: 10px;
+  background-color: #6a1b9a;   /* morado elegante */
+  color: white;               /* texto blanco */
+  padding: 10px 18px;          /* espacio interno */
+  border: none;                /* sin borde duro */
+  border-radius: 8px;          /* esquinas redondeadas */
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* sombra sutil */
+  transition: all 0.3s ease;
+}
+
+.volver{
+    padding: 5px 10px;
+  margin-top: 5px;
+  cursor: pointer;
+  background-color: #22777a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  transition: background 0.3s;
+}

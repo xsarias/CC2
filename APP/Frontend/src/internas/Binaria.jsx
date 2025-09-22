@@ -1,6 +1,6 @@
 import { useState } from "react";
 import IngresarDatos from "./IngresarDatos";
-import "../App.css"
+import "../App.css";
 
 function Binaria({ array, onBack }) {
   const [datos, setDatos] = useState(array || []);
@@ -12,39 +12,23 @@ function Binaria({ array, onBack }) {
   const [high, setHigh] = useState(null);
   const [buscando, setBuscando] = useState(false);
 
-  // comparador robusto: numérico si ambos son números, sino localeCompare con numeric option
+  // Comparador robusto
   const compareValues = (a, b) => {
-    // normalizar nulos/vacíos
     if (a === null || a === undefined) a = "";
     if (b === null || b === undefined) b = "";
-
     const an = Number(a);
     const bn = Number(b);
     const aIsNum = a !== "" && !Number.isNaN(an);
     const bIsNum = b !== "" && !Number.isNaN(bn);
-
-    if (aIsNum && bIsNum) {
-      // comparación numérica
-      return an - bn;
-    }
-    // comparación textual, con opción numeric para que "2" y "10" ordenen correctamente si contienen números
+    if (aIsNum && bIsNum) return an - bn;
     return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
   };
 
-  // Buscar binaria con animación
+  // Búsqueda binaria con animación
   const buscar = () => {
     if (!datos || datos.length === 0) return;
 
-    // Crear copia ordenada usando compareValues indirectamente:
-    // Para sort con comparator que devuelve negative/positive/0, adaptamos compareValues:
-    const arr = [...datos].sort((x, y) => {
-      const cmp = compareValues(x, y);
-      // compareValues devuelve difference for numbers, or localeCompare result (number)
-      if (typeof cmp === "number") return cmp;
-      return cmp;
-    });
-
-    // actualizar estado visible (tabla) con el array ordenado
+    const arr = [...datos].sort((x, y) => compareValues(x, y));
     setDatos(arr);
 
     setBuscando(true);
@@ -80,16 +64,14 @@ function Binaria({ array, onBack }) {
         setFoundIndex(mid);
         return;
       } else if (cmpMidTarget < 0) {
-        // arr[mid] < target
         lowIdx = mid + 1;
       } else {
-        // arr[mid] > target
         highIdx = mid - 1;
       }
-    }, 800); // ajusta velocidad aquí (ms)
+    }, 800);
   };
 
-  // pequeño helper: mostrar mensaje bonito
+  // Mensaje resultado
   const MensajeResultado = () =>
     foundIndex !== null && !buscando ? (
       <div
@@ -121,7 +103,9 @@ function Binaria({ array, onBack }) {
           <h3>🛠 Crear estructura</h3>
           <IngresarDatos onDataChange={(arr) => setDatos(arr)} />
           <button onClick={onBack}>⬅ Volver</button>
-          <button onClick={() => setFase("buscar")} className="botones" >➡ Ir a búsqueda</button>
+          <button onClick={() => setFase("buscar")} className="botones">
+            ➡ Ir a búsqueda
+          </button>
         </>
       )}
 
@@ -138,34 +122,48 @@ function Binaria({ array, onBack }) {
           <button onClick={buscar} disabled={buscando}>
             {buscando ? "Buscando..." : "Buscar"}
           </button>
-          <button onClick={() => setFase("crear")} className="botones_nav"  style={{ marginLeft: "10px" }} disabled={buscando}>
+          <button
+            onClick={() => setFase("crear")}
+            className="botones_nav"
+            style={{ marginLeft: "10px" }}
+            disabled={buscando}
+          >
             ⬅ Volver a creación
           </button>
 
           <br />
-
           <MensajeResultado />
 
-          <table
+          {/* NUEVO: visualización en casillas */}
+          <div
             style={{
-              margin: "20px auto",
-              borderCollapse: "collapse",
-              border: "1px solid #ccc",
-              background: "white",
-              color: "black",
+              marginTop: "20px",
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "8px",
+              maxWidth: "90%",
+              marginLeft: "auto",
+              marginRight: "auto",
+               
             }}
           >
-            <thead>
-              <tr style={{ background: "#f0f0f0" }}>
-                <th style={{ border: "1px solid #ccc", padding: "8px" }}>Posición</th>
-                <th style={{ border: "1px solid #ccc", padding: "8px" }}>Clave</th>
-              </tr>
-            </thead>
-            <tbody>
-              {datos.map((c, i) => (
-                <tr
+            {datos.length === 0 ? (
+              <p style={{ opacity: 0.6 }}>Estructura vacía</p>
+            ) : (
+              datos.map((c, i) => (
+                <div
                   key={i}
                   style={{
+                    width: "60px",
+                    height: "60px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #ccc",
+                    borderRadius: "6px",
+                    color: "#333",
                     background:
                       i === foundIndex
                         ? "lightgreen"
@@ -174,26 +172,18 @@ function Binaria({ array, onBack }) {
                         : low !== null && high !== null && i >= low && i <= high
                         ? "#f0f0f0"
                         : "white",
-                    transition: "background 0.25s ease",
+                    transition: "background 0.3s ease",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                   }}
                 >
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
+                  <span style={{ fontSize: "0.7em", color: "#666" }}>
                     {i + 1}
-                  </td>
-                  <td style={{ border: "1px solid #ccc", padding: "8px", textAlign: "center" }}>
-                    {c}
-                  </td>
-                </tr>
-              ))}
-              {datos.length === 0 && (
-                <tr>
-                  <td colSpan="2" style={{ textAlign: "center", padding: "10px" }}>
-                    Estructura vacía
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </span>
+                  <span style={{ fontWeight: "bold" }}>{c}</span>
+                </div>
+              ))
+            )}
+          </div>
         </>
       )}
     </div>

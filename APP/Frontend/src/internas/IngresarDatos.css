@@ -1,10 +1,14 @@
 .contenedor {
   text-align: center;
   margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 10px;
 }
 
 .input-chico {
-  width: 50px;
+  width: 150px;
   margin-left: 10px;
 }
 
@@ -22,46 +26,17 @@
   padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-  background-color: #22777a; /* rojo */
-  color: rgb(255, 255, 255);
-  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;  
-
-}
-.boton_agregar {
-  background-color: #69bbf1; /* rojo más oscuro al pasar el mouse */
-}
-.tabla-claves {
-  margin: 20px auto;
-  border-collapse: collapse;
-  border: 1px solid #ccc;
-  background: white;
-  color: black;
-}
-
-.tabla-claves th, .tabla-claves td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
-}
-
-.tabla-claves th {
-  background: #f0f0f0;
-}
-
-.boton_borrar {
-  background-color: #e74c3c; /* rojo */
-  color: white;             /* texto en blanco */
+  background-color: #22777a;
+  color: white;
   border: none;
-  padding: 8px 12px;
   border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  transition: background 0.3s;
 }
 
-.boton_borrar:hover {
-  background-color: #c0392b; /* rojo más oscuro al pasar el mouse */
+.boton:hover {
+  background-color: #1b5f61;
 }
-
 
 .boton_agregar {
   background-color: #30f388;
@@ -76,5 +51,72 @@
 }
 
 .boton_agregar:hover {
-  background-color: #1ecf6a; /* un poco más oscuro al pasar el mouse */
+  background-color: #1ecf6a;
 }
+
+/* ---------------- */
+/* NUEVO: slots bonitos */
+.contenedor-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.slot {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  font-weight: bold;
+  margin: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: #000;
+}
+
+.slot.ocupado {
+  background-color: #a4cea4;
+}
+
+.slot.vacio {
+  background-color: #f3f3f3;
+}
+
+.slot-header {
+  position: absolute;
+  top: 4px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  font-size: 1em;
+  color: #000;
+}
+
+.slot .indice {
+  color: #333; /* índice un poco más oscuro */
+}
+
+.slot-valor {
+  font-size: 16px;
+  color: #000;
+  margin-bottom: 4px;
+}
+
+.boton_borrar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3em;
+  padding: 0;
+  color: red;
+}
+
+

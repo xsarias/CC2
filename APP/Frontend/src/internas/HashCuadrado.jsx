@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import "../App.css";
 import "./IngresarDatos.css";
 
@@ -14,7 +13,8 @@ function HashCuadrado({ onDataChange, onBack }) {
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
     const [metodoColision, setMetodoColision] = useState("lineal");
 
-    // Función hash (cuadrado medio)
+    const ecuacionHash = `H(K) = dig_cent (K²) +1  →  n = ${tamanoEstructura}`;
+
     const hash = (key) => {
         const num = parseInt(key, 10);
         if (isNaN(num)) return 0;
@@ -25,7 +25,6 @@ function HashCuadrado({ onDataChange, onBack }) {
         return extraido % tamanoEstructura;
     };
 
-    // Evita duplicados
     const existeClave = (key) => {
         return tabla.some(slot => {
             if (Array.isArray(slot)) return slot.includes(key);
@@ -34,7 +33,6 @@ function HashCuadrado({ onDataChange, onBack }) {
         });
     };
 
-    // Insertar clave
     const agregarClave = () => {
         if (clave.length !== tamanoClave) {
             alert(`La clave debe tener exactamente ${tamanoClave} dígitos`);
@@ -50,6 +48,12 @@ function HashCuadrado({ onDataChange, onBack }) {
             return;
         }
 
+        const ocupados = tabla.filter(slot => slot !== null && slot !== undefined && !(Array.isArray(slot) && slot.length === 0)).length;
+        if (ocupados >= tamanoEstructura) {
+            alert(`❌ La tabla ya está llena (${tamanoEstructura} posiciones).`);
+            return;
+        }
+
         let index = hash(clave);
         const nuevaTabla = [...tabla];
 
@@ -58,7 +62,6 @@ function HashCuadrado({ onDataChange, onBack }) {
                 while (nuevaTabla[index] !== null) index = (index + 1) % tamanoEstructura;
                 nuevaTabla[index] = clave;
                 break;
-
             case "cuadratica": {
                 let i = 0;
                 while (nuevaTabla[(index + i * i) % tamanoEstructura] !== null) i++;
@@ -66,24 +69,20 @@ function HashCuadrado({ onDataChange, onBack }) {
                 nuevaTabla[index] = clave;
                 break;
             }
-
             case "doble-hash": {
                 let step = 7 - (parseInt(clave, 10) % 7);
                 while (nuevaTabla[index] !== null) index = (index + step) % tamanoEstructura;
                 nuevaTabla[index] = clave;
                 break;
             }
-
             case "arreglo-anidado":
                 if (!Array.isArray(nuevaTabla[index])) nuevaTabla[index] = [];
                 nuevaTabla[index] = [...nuevaTabla[index], clave];
                 break;
-
             case "encadenamiento":
                 if (!nuevaTabla[index]) nuevaTabla[index] = { tipo: "encadenamiento", valores: [] };
                 nuevaTabla[index].valores.push(clave);
                 break;
-
             default:
                 nuevaTabla[index] = clave;
         }
@@ -92,49 +91,79 @@ function HashCuadrado({ onDataChange, onBack }) {
         setClave("");
         setUltimoInsertado(index);
         setTimeout(() => setUltimoInsertado(null), 1500);
-        onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura });
+        onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura, metodoColision });
     };
 
-    // Buscar clave
-    const buscarClave = () => {
+    const buscarClave = async () => {
         if (!clave) {
             alert("Por favor ingresa una clave para buscar.");
             return;
         }
 
-        const index = hash(clave);
+        let indexInicial = hash(clave);
+        let index = indexInicial;
+        let i = 0;
         let encontrado = false;
+        const indicesRevisados = [];
 
-        if (Array.isArray(tabla[index])) encontrado = tabla[index].includes(clave);
-        else if (tabla[index] && tabla[index].tipo === "encadenamiento")
-            encontrado = tabla[index].valores.includes(clave);
-        else encontrado = tabla[index] === clave;
+        if (["lineal", "cuadratica", "doble-hash"].includes(metodoColision)) {
+            while (i < tamanoEstructura) {
+                indicesRevisados.push(index);
+                if (tabla[index] === clave) {
+                    encontrado = true;
+                    break;
+                }
+                i++;
+                if (metodoColision === "lineal") index = (indexInicial + i) % tamanoEstructura;
+                else if (metodoColision === "cuadratica") index = (indexInicial + i * i) % tamanoEstructura;
+                else if (metodoColision === "doble-hash") {
+                    const step = 7 - (parseInt(clave, 10) % 7);
+                    index = (indexInicial + i * step) % tamanoEstructura;
+                }
+            }
+        } else if (metodoColision === "arreglo-anidado" || metodoColision === "encadenamiento") {
+            indicesRevisados.push(index);
+            if (Array.isArray(tabla[index]) ? tabla[index].includes(clave)
+                : tabla[index]?.tipo === "encadenamiento" ? tabla[index].valores.includes(clave)
+                : tabla[index] === clave) {
+                encontrado = true;
+            }
+        }
+
+        for (const idx of indicesRevisados) {
+            setUltimoInsertado(idx);
+            await new Promise(res => setTimeout(res, 400));
+        }
+        setUltimoInsertado(null);
 
         setResultadoBusqueda(
             encontrado
-                ? `✅ La clave ${clave} está en la posición ${index + 1}`
-                : `❌ La clave ${clave} NO está en la tabla (posición esperada: ${index + 1})`
+                ? `✅ La clave ${clave} está en la posición ${indexInicial + 1}`
+                : `❌ La clave ${clave} NO está en la tabla (posición esperada: ${indexInicial + 1})`
         );
     };
 
-    // Borrar clave
     const borrarClave = (index, valor = null) => {
         const nuevaTabla = [...tabla];
         if (valor && Array.isArray(nuevaTabla[index])) {
-            nuevaTabla[index] = nuevaTabla[index].filter((v) => v !== valor);
+            nuevaTabla[index] = nuevaTabla[index].filter(v => v !== valor);
             if (nuevaTabla[index].length === 0) nuevaTabla[index] = null;
         } else if (valor && nuevaTabla[index]?.tipo === "encadenamiento") {
-            nuevaTabla[index].valores = nuevaTabla[index].valores.filter((v) => v !== valor);
+            nuevaTabla[index].valores = nuevaTabla[index].valores.filter(v => v !== valor);
             if (nuevaTabla[index].valores.length === 0) nuevaTabla[index] = null;
         } else {
             nuevaTabla[index] = null;
         }
         setTabla(nuevaTabla);
-        onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura });
+        onDataChange?.(nuevaTabla, { tamanoClave, rangoMin, rangoMax, tamanoEstructura, metodoColision });
     };
 
-    // Guardar archivo JSON
     const guardarArchivo = () => {
+        if (!tabla || tabla.length === 0) {
+            alert("La tabla está vacía, no hay nada que guardar.");
+            return;
+        }
+
         const nombreArchivo = prompt("Nombre para el archivo (sin extensión):");
         if (!nombreArchivo) return;
 
@@ -145,6 +174,7 @@ function HashCuadrado({ onDataChange, onBack }) {
             rangoMax,
             tamanoEstructura,
             valores: tabla,
+            metodoColision,
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -156,11 +186,9 @@ function HashCuadrado({ onDataChange, onBack }) {
         URL.revokeObjectURL(url);
     };
 
-    // Recuperar archivo JSON
     const recuperarArchivo = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
@@ -174,11 +202,13 @@ function HashCuadrado({ onDataChange, onBack }) {
                 setRangoMin(Number(data.rangoMin) || 0);
                 setRangoMax(Number(data.rangoMax) || 99);
                 setTamanoEstructura(Number(data.tamanoEstructura) || data.valores.length);
+                setMetodoColision(data.metodoColision || "lineal");
                 onDataChange?.(data.valores, {
                     tamanoClave: Number(data.tamanoClave) || 2,
                     rangoMin: Number(data.rangoMin) || 0,
                     rangoMax: Number(data.rangoMax) || 99,
                     tamanoEstructura: Number(data.tamanoEstructura) || data.valores.length,
+                    metodoColision: data.metodoColision || "lineal",
                 });
             } catch (error) {
                 alert("Error al leer el archivo: JSON inválido");
@@ -190,42 +220,83 @@ function HashCuadrado({ onDataChange, onBack }) {
 
     return (
         <div className="contenedor">
-            <h3>🔑 Tabla Hash (Método del cuadrado)</h3>
+            <h3>🔑 Función Cuadrado</h3>
 
-            {/* Menú colisión */}
-            <div style={{ marginBottom: "10px" }}>
-                <label>
-                    Método de colisión:
-                    <select value={metodoColision} onChange={(e) => setMetodoColision(e.target.value)}>
-                        <option value="lineal">Prueba Lineal</option>
-                        <option value="cuadratica">Prueba Cuadrática</option>
-                        <option value="doble-hash">Doble Dirección Hash</option>
-                        <option value="arreglo-anidado">Arreglos Anidados</option>
-                        <option value="encadenamiento">Encadenamiento</option>
-                    </select>
-                </label>
+            {/* Ecuación */}
+            <div style={{
+                marginBottom: "15px",
+                fontWeight: "bold",
+                color: "#131212ff",
+                backgroundColor: "#e9d0e9ff",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                display: "inline-block"
+            }}>
+                {ecuacionHash}
             </div>
 
             {/* Configuración */}
-            <div style={{ marginBottom: "10px" }}>
-                <label>
-                    Tamaño de la estructura:
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", marginBottom: "15px" }}>
+                <div>
+                    <label>Método de Colisión:</label><br />
+                    <select
+                        value={metodoColision}
+                        onChange={(e) => setMetodoColision(e.target.value)}
+                        style={{ width: "180px", padding: "4px", borderRadius: "5px" }}
+                    >
+                        <option value="lineal">Prueba Lineal</option>
+                        <option value="cuadratica">Prueba Cuadrática</option>
+                        <option value="doble-hash">Doble Hash</option>
+                        <option value="arreglo-anidado">Arreglo Anidado</option>
+                        <option value="encadenamiento">Encadenamiento</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Tamaño de la estructura:</label><br />
                     <input
                         type="number"
                         value={tamanoEstructura}
+                        min="1"
                         onChange={(e) => {
                             const nuevo = parseInt(e.target.value);
                             setTamanoEstructura(nuevo);
                             setTabla(Array(nuevo).fill(null));
                         }}
-                        min="1"
-                        className="input-chico"
+                        style={{ width: "100px", padding: "4px", borderRadius: "5px" }}
                     />
-                </label>
+                </div>
+
+                <div>
+                    <label>Tamaño de la clave:</label><br />
+                    <input
+                        type="number"
+                        value={tamanoClave}
+                        min="1"
+                        onChange={(e) => setTamanoClave(parseInt(e.target.value))}
+                        style={{ width: "100px", padding: "4px", borderRadius: "5px" }}
+                    />
+                </div>
+
+                <div>
+                    <label>Rango:</label><br />
+                    <input
+                        type="number"
+                        value={rangoMin}
+                        onChange={(e) => setRangoMin(parseInt(e.target.value))}
+                        style={{ width: "70px", padding: "4px", borderRadius: "5px" }}
+                    /> -
+                    <input
+                        type="number"
+                        value={rangoMax}
+                        onChange={(e) => setRangoMax(parseInt(e.target.value))}
+                        style={{ width: "70px", padding: "4px", borderRadius: "5px", marginLeft: "4px" }}
+                    />
+                </div>
             </div>
 
             {/* Input clave */}
-            <div>
+            <div style={{ marginBottom: "10px" }}>
                 <input
                     type="text"
                     value={clave}
@@ -238,77 +309,37 @@ function HashCuadrado({ onDataChange, onBack }) {
                 <button onClick={buscarClave} className="boton" style={{ marginLeft: "10px" }}>🔍 Buscar</button>
             </div>
 
-            {/* Resultado de búsqueda */}
-            {resultadoBusqueda && (
-                <div className="resultado-busqueda">
-                    🔍 {resultadoBusqueda}
-                </div>
-            )}
+            {/* Resultado búsqueda */}
+            {resultadoBusqueda && <div className="resultado-busqueda">{resultadoBusqueda}</div>}
 
-            {/* Tabla hash */}
-            <table className="tabla-claves">
-                <thead>
-                    <tr>
-                        <th>Índice</th>
-                        <th>Clave(s)</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tabla.map((valor, i) => (
-                        <tr key={i} style={{
-                            backgroundColor: i === ultimoInsertado ? "#d1ffd1" : "transparent",
-                            transition: "background-color 0.6s ease",
-                        }}>
-                            <td>{i + 1}</td>
-                            <td>
-                                {Array.isArray(valor) ? (
-                                    <div className="px-2 py-1 bg-green-200 rounded-md">
-                                        [{valor.join(", ")}]
-                                    </div>
-                                ) : valor?.tipo === "encadenamiento" ? (
-                                    <div className="flex items-center">
-                                        {valor.valores.map((v, idx) => (
-                                            <span key={idx} className="px-2 py-1 bg-blue-200 rounded-md mx-1">
-                                                {v}{idx < valor.valores.length - 1 && " →"}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    valor ?? <em>vacío</em>
-                                )}
-                            </td>
-                            <td>
-                                {Array.isArray(valor)
-                                    ? valor.map((v, idx) => (
-                                        <button key={idx} onClick={() => borrarClave(i, v)} className="boton_borrar">🗑 {v}</button>
-                                    ))
-                                    : valor?.tipo === "encadenamiento"
-                                        ? valor.valores.map((v, idx) => (
-                                            <button key={idx} onClick={() => borrarClave(i, v)} className="boton_borrar">🗑 {v}</button>
-                                        ))
-                                        : valor && <button onClick={() => borrarClave(i)} className="boton_borrar">🗑 Borrar</button>}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {/* Contenedor de slots */}
+            <div className="contenedor-slots">
+                {tabla.map((valor, i) => {
+                    const valores = valor?.tipo === "encadenamiento" ? valor.valores : Array.isArray(valor) ? valor : valor ? [valor] : [];
+                    return (
+                        <div key={i} className={`slot ${valor ? "ocupado" : "vacio"}`} style={{ borderColor: i === ultimoInsertado ? "#2ecc71" : "#ccc" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", padding: "2px 4px" }}>
+                                <span className="indice">{i + 1}</span>
+                                {valores.length > 0 && valores.map((v, idx) => (
+                                    <button key={idx} className="boton_borrar" onClick={() => borrarClave(i, v)}>🗑</button>
+                                ))}
+                            </div>
+                            <div style={{ marginTop: "4px", textAlign: "center", fontWeight: "bold" }}>
+                                {valores.length > 0 ? valores.join(", ") : "__"}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
 
-            {/* Botones extra */}
+            {/* Guardar / Cargar */}
             <div style={{ marginTop: "10px" }}>
                 <button onClick={guardarArchivo} className="boton">💾 Guardar archivo</button>
                 <label style={{ cursor: "pointer", marginLeft: "10px" }} className="boton">
                     📂 Cargar archivo
-                    <input
-                        type="file"
-                        accept=".json"
-                        onChange={recuperarArchivo}
-                        style={{ display: "none" }}
-                    />
+                    <input type="file" accept=".json" onChange={recuperarArchivo} style={{ display: "none" }} />
                 </label>
-                <button onClick={onBack} style={{ marginLeft: "10px" }} className="boton">
-                    ⬅ Volver
-                </button>
+                <button onClick={onBack} style={{ marginLeft: "10px" }} className="boton">⬅ Volver</button>
             </div>
         </div>
     );

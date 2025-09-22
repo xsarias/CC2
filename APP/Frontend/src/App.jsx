@@ -4,7 +4,14 @@ import Busqueda from "./Busqueda";
 import Secuencial from "./internas/Secuencial";
 import Binaria from "./internas/Binaria";
 import Hash from "./internas/Hash";
+import ArbolesDigitales from "./internas/ArbolesDigitales";
+import PorResiduo from "./internas/PorResiduo";
 import "./App.css"
+import "./internas/ArbolesDigitales";
+import "./internas/Multiples";
+import "./internas/PorResiduo";
+import "./internas/Huffman";
+
 function App() {
   const [message, setMessage] = useState("Cargando...");
   const [tab, setTab] = useState("home");
@@ -18,13 +25,12 @@ function App() {
   }, []);
 
   return (
-    <div className="contenedor"
-    >
+    <div className="contenedor">
       {/* Home */}
       {tab === "home" && (
         <>
           <h1 className="titulo">Ciencias de la Computación II</h1>
-          <p className= "mensaje">{message}</p>
+          <p className="mensaje">{message}</p>
           <div className="app-container">
             <button onClick={() => setTab("busqueda")} className="botones">Búsquedas</button>
             <button onClick={() => setTab("grafos")} className="botones">Grafos</button>
@@ -33,21 +39,18 @@ function App() {
       )}
 
       {/* Menú de algoritmos */}
-      {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} className="botones" />}
+      {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} />}
 
-      {/* Pantallas específicas */}
-      {tab === "secuencial" && (
-        <Secuencial array={datos} onBack={() => setTab("busqueda")} className="botones" />
-      )}
+   
+      {tab === "secuencial" && <Secuencial array={datos} onBack={() => setTab("busqueda")} />}
+      {tab === "binaria" && <Binaria array={datos} onBack={() => setTab("busqueda")} />}
+      {tab === "hash" && <Hash onBack={() => setTab("busqueda")} />}
+      {tab === "arbol_dig" && <ArbolesDigitales onBack={() => setTab("busqueda")} />}
+      {tab === "residuo" && <PorResiduo onBack={() => setTab("busqueda")} />}
+      {tab === "multiples" && <Multiples titulo="Búsquedas Múltiples" />}
+      {tab === "huffman" && <Huffman titulo="Árboles de Huffman" />}
 
-      {tab === "binaria" && (
-        <Binaria array={datos} onBack={() => setTab("busqueda")} className="botones"  />
-      )}
-
-      {tab === "hash" && (
-        <Hash onBack={() => setTab("busqueda")} />
-      )}
-
+      {/* Grafos */}
       {tab === "grafos" && <h2>Aquí irá la sección de grafos 🚀</h2>}
     </div>
   );
