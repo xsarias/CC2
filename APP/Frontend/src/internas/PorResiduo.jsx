@@ -11,7 +11,7 @@ const ALFABETO_AMER = {
 
 class Nodo {
     constructor(letra = null) {
-        this.letra = letra;   // Solo se guarda en hojas
+        this.letra = letra;
         this.izq = null;
         this.der = null;
         this.x = 0;
@@ -37,7 +37,12 @@ function insertarPorResiduo(nodo, letra, codigo, i = 0) {
         const codigoExistente = ALFABETO_AMER[letraExistente];
         const bitExistente = codigoExistente[i];
         const ramaExistente = bitExistente === "0" ? "izq" : "der";
-        nodo[ramaExistente] = insertarPorResiduo(nodo[ramaExistente], letraExistente, codigoExistente, i + 1);
+        nodo[ramaExistente] = insertarPorResiduo(
+            nodo[ramaExistente],
+            letraExistente,
+            codigoExistente,
+            i + 1
+        );
     }
 
     // Caso 3: seguimos insertando la nueva letra según el bit actual
@@ -48,15 +53,15 @@ function insertarPorResiduo(nodo, letra, codigo, i = 0) {
     return nodo;
 }
 
-
-
 function calcularPosiciones(nodo, depth = 0, x = 500, offset = 200) {
     if (!nodo) return [];
     nodo.y = depth * 80 + 40;
     nodo.x = x;
     const posiciones = [nodo];
-    if (nodo.izq) posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - offset, offset / 2));
-    if (nodo.der) posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + offset, offset / 2));
+    if (nodo.izq)
+        posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - offset, offset / 2));
+    if (nodo.der)
+        posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + offset, offset / 2));
     return posiciones;
 }
 
@@ -65,7 +70,7 @@ function PorResiduo({ onBack }) {
     const [claves, setClaves] = useState([]);
     const [raiz, setRaiz] = useState(null);
     const [mensaje, setMensaje] = useState("");
-    const [letraResaltada, setLetraResaltada] = useState(null);
+    const [nodoResaltado, setNodoResaltado] = useState(null);
     const [buscando, setBuscando] = useState(false);
 
     const construirArbol = (arrayClaves) => {
@@ -75,7 +80,7 @@ function PorResiduo({ onBack }) {
             if (codigo) r = insertarPorResiduo(r, letra, codigo);
         });
         setRaiz(r);
-        setLetraResaltada(null);
+        setNodoResaltado(null);
     };
 
     const agregarClave = () => {
@@ -110,7 +115,9 @@ function PorResiduo({ onBack }) {
 
     const buscarEnArbol = async () => {
         const letra = clave.toUpperCase();
-        if (!ALFABETO_AMER[letra]) {
+        const codigo = ALFABETO_AMER[letra];
+
+        if (!codigo) {
             setMensaje(`❌ "${letra}" no está en el alfabeto AMER`);
             return;
         }
@@ -118,23 +125,34 @@ function PorResiduo({ onBack }) {
             setMensaje("⚠ Inserta al menos una clave primero");
             return;
         }
+
         setBuscando(true);
         setMensaje(`🔍 Buscando "${letra}"...`);
-        setLetraResaltada(null);
+        setNodoResaltado(null);
 
-        const nodos = calcularPosiciones(raiz);
-        for (let n of nodos) {
-            setLetraResaltada(n.letra);
-            await new Promise(res => setTimeout(res, 300));
-            if (n.letra === letra) {
-                setMensaje(`✅ "${letra}" encontrada`);
+        let nodo = raiz;
+        for (let i = 0; i < codigo.length; i++) {
+            setNodoResaltado(nodo); // 🔥 resaltar nodo actual
+            await new Promise(res => setTimeout(res, 500));
+
+            const bit = codigo[i];
+            nodo = bit === "0" ? nodo.izq : nodo.der;
+
+            if (!nodo) {
+                setMensaje(`❌ "${letra}" no se encuentra`);
+                setNodoResaltado(null);
                 setBuscando(false);
                 return;
             }
         }
 
-        setMensaje(`❌ "${letra}" no se encuentra`);
-        setLetraResaltada(null);
+        setNodoResaltado(nodo); // 🔥 resaltar último nodo
+        if (nodo.letra === letra) {
+            setMensaje(`✅ "${letra}" encontrada`);
+        } else {
+            setMensaje(`❌ "${letra}" no se encuentra`);
+            setNodoResaltado(null);
+        }
         setBuscando(false);
     };
 
@@ -163,15 +181,19 @@ function PorResiduo({ onBack }) {
             <div className="sidebar">
                 <h2>🌳 Árbol por Residuo</h2>
 
+                
+                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                    Digite una clave:
+                </label>
                 <input
+                    id="claveInput"
                     type="text"
                     maxLength={1}
                     value={clave}
                     onChange={e => setClave(e.target.value.toUpperCase())}
                 />
-
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
+                    <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Insertar</button>
                     <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
                     <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>🗑️ Eliminar</button>
                 </div>
@@ -215,8 +237,8 @@ function PorResiduo({ onBack }) {
                                         y={n.y - 20}
                                         width="40"
                                         height="40"
-                                        fill={n.letra === letraResaltada ? "#ff6666" : "#6bb8ff"}
-                                        stroke={n.letra === letraResaltada ? "#c0392b" : "#2980b9"}
+                                        fill={n === nodoResaltado ? "#ff6666" : "#6bb8ff"}
+                                        stroke={n === nodoResaltado ? "#c0392b" : "#2980b9"}
                                         strokeWidth="2"
                                         rx="5"
                                     />
@@ -224,8 +246,8 @@ function PorResiduo({ onBack }) {
                                 : (
                                     <circle
                                         cx={n.x} cy={n.y} r="20"
-                                        fill="#ffcb6b"
-                                        stroke="#e67e22"
+                                        fill={n === nodoResaltado ? "#ff9999" : "#ffcb6b"}
+                                        stroke={n === nodoResaltado ? "#c0392b" : "#e67e22"}
                                         strokeWidth="2"
                                     />
                                 )

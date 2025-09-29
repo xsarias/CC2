@@ -25,6 +25,7 @@
 .boton {
   padding: 5px 10px;
   margin-top: 5px;
+  margin: 0 4px;   /* 👈 espacio a los lados */
   cursor: pointer;
   background-color: #22777a;
   color: white;
@@ -39,8 +40,8 @@
 }
 
 .boton_agregar {
-  background-color: #30f388;
-  color: #3d3838;
+  background-color: #367954;
+  color: white;
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
@@ -51,7 +52,7 @@
 }
 
 .boton_agregar:hover {
-  background-color: #1ecf6a;
+  background-color: #325e44;
 }
 
 /* ---------------- */
@@ -116,7 +117,106 @@
   cursor: pointer;
   font-size: 1.3em;
   padding: 0;
-  color: red;
+  color: rgb(139, 40, 40);
 }
 
+
+/* Input principal */
+.input-clave {
+  width: 180px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-right: 8px;
+  text-align: center;
+}
+
+/* Botones principales */
+.boton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.boton:hover {
+  transform: scale(1.05);
+}
+
+/* Variantes */
+.boton.insertar {
+  background-color: #30f388;
+  color: #333;
+}
+.boton.insertar:hover {
+  background-color: #2e8554;
+}
+
+.boton.buscar {
+  background-color: #1d4142;
+}
+.boton.buscar:hover {
+  background-color: #499a9c;
+}
+
+.boton.eliminar {
+  background-color: #77352e;
+}
+.boton.eliminar:hover {
+  background-color: #94362c;
+}
+.tabla-estructura {
+  border-collapse: collapse;
+  margin: 10px auto;
+  text-align: center;
+}
+
+.tabla-estructura td {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #999;
+  vertical-align: middle;
+  font-weight: bold;
+  position: relative;
+}
+
+.tabla-estructura td.ocupado {
+  background-color: #a4cea4;
+}
+
+.tabla-estructura td.vacio {
+  background-color: #f3f3f3;
+}
+
+.tabla-estructura .indice {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 0.7em;
+  color: #555;
+}
+
+.tabla-estructura .valor {
+  font-size: 1.1em;
+  line-height: 60px;
+}
+/* Celda revisada en la búsqueda */
+.revisando {
+  background-color: #ffc107 !important; /* Amarillo */
+  box-shadow: 0 0 8px rgba(255,193,7,0.7);
+  transition: all 0.3s ease;
+}
+
+/* Celda encontrada */
+.encontrado {
+  background-color: #28a745 !important; /* Verde */
+  box-shadow: 0 0 10px rgba(40,167,69,0.8);
+  color: #fff;
+  transition: all 0.3s ease;
+}
 

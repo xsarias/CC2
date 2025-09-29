@@ -119,6 +119,6 @@ body {
   padding: 2rem;                         /* espacio interno */
   margin: 2rem;                          /* margen externo */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* sombra elegante */
-  max-width: 1000px;                     /* ancho máximo */
+  max-width: 7000px;                     /* ancho máximo */
 }
 

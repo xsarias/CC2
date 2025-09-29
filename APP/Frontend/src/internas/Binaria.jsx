@@ -2,11 +2,9 @@ import { useState } from "react";
 import IngresarDatos from "./IngresarDatos";
 import "../App.css";
 
-function Binaria({ array, onBack }) {
-  const [datos, setDatos] = useState(array || []);
-  const [target, setTarget] = useState("");
+function Binaria({ onBack }) {
+  const [datos, setDatos] = useState([]);
   const [foundIndex, setFoundIndex] = useState(null);
-  const [fase, setFase] = useState("crear");
   const [currentMid, setCurrentMid] = useState(null);
   const [low, setLow] = useState(null);
   const [high, setHigh] = useState(null);
@@ -14,21 +12,21 @@ function Binaria({ array, onBack }) {
 
   // Comparador robusto
   const compareValues = (a, b) => {
-    if (a === null || a === undefined) a = "";
-    if (b === null || b === undefined) b = "";
     const an = Number(a);
     const bn = Number(b);
     const aIsNum = a !== "" && !Number.isNaN(an);
     const bIsNum = b !== "" && !Number.isNaN(bn);
     if (aIsNum && bIsNum) return an - bn;
-    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+    return String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
   };
 
-  // Búsqueda binaria con animación
-  const buscar = () => {
-    if (!datos || datos.length === 0) return;
-
-    const arr = [...datos].sort((x, y) => compareValues(x, y));
+  // 🔎 búsqueda binaria con animación
+  const manejarBuscar = (target, array) => {
+    if (!target) return;
+    const arr = [...array].sort(compareValues);
     setDatos(arr);
 
     setBuscando(true);
@@ -68,10 +66,10 @@ function Binaria({ array, onBack }) {
       } else {
         highIdx = mid - 1;
       }
-    }, 800);
+    }, 700);
   };
 
-  // Mensaje resultado
+  // ✅ Mensaje resultado
   const MensajeResultado = () =>
     foundIndex !== null && !buscando ? (
       <div
@@ -97,95 +95,30 @@ function Binaria({ array, onBack }) {
   return (
     <div style={{ textAlign: "center" }}>
       <h2>📘 Búsqueda Binaria</h2>
+      <h3>🛠 Crear, buscar y eliminar en estructura</h3>
 
-      {fase === "crear" && (
-        <>
-          <h3>🛠 Crear estructura</h3>
-          <IngresarDatos onDataChange={(arr) => setDatos(arr)} />
-          <button onClick={onBack}>⬅ Volver</button>
-          <button onClick={() => setFase("buscar")} className="botones">
-            ➡ Ir a búsqueda
-          </button>
-        </>
-      )}
+      {/* 👉 Pasamos lógica a IngresarDatos */}
+      <IngresarDatos
+        onDataChange={(arr) => setDatos(arr)}
+        onBuscar={manejarBuscar}
+        currentIndex={currentMid}
+        foundIndex={foundIndex}
+        datos={datos}
+        low={low}
+        high={high}
+      />
 
-      {fase === "buscar" && (
-        <>
-          <h3>🔍 Buscar en estructura</h3>
-          <input
-            type="text"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            placeholder="Dato a buscar"
-            disabled={buscando}
-          />
-          <button onClick={buscar} disabled={buscando}>
-            {buscando ? "Buscando..." : "Buscar"}
-          </button>
-          <button
-            onClick={() => setFase("crear")}
-            className="botones_nav"
-            style={{ marginLeft: "10px" }}
-            disabled={buscando}
-          >
-            ⬅ Volver a creación
-          </button>
+      <MensajeResultado />
 
-          <br />
-          <MensajeResultado />
-
-          {/* NUEVO: visualización en casillas */}
-          <div
-            style={{
-              marginTop: "20px",
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              gap: "8px",
-              maxWidth: "90%",
-              marginLeft: "auto",
-              marginRight: "auto",
-               
-            }}
-          >
-            {datos.length === 0 ? (
-              <p style={{ opacity: 0.6 }}>Estructura vacía</p>
-            ) : (
-              datos.map((c, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid #ccc",
-                    borderRadius: "6px",
-                    color: "#333",
-                    background:
-                      i === foundIndex
-                        ? "lightgreen"
-                        : i === currentMid
-                        ? "yellow"
-                        : low !== null && high !== null && i >= low && i <= high
-                        ? "#f0f0f0"
-                        : "white",
-                    transition: "background 0.3s ease",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <span style={{ fontSize: "0.7em", color: "#666" }}>
-                    {i + 1}
-                  </span>
-                  <span style={{ fontWeight: "bold" }}>{c}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </>
-      )}
+      {/* Botón volver */}
+      <button
+        onClick={onBack}
+        style={{ marginTop: "10px" }}
+        disabled={buscando}
+        className="boton"
+      >
+        ⬅ Volver
+      </button>
     </div>
   );
 }

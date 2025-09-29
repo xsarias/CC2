@@ -115,6 +115,42 @@ function ArbolesDigitales({ onBack }) {
         setBuscando(false);
     };
 
+    // 💾 Guardar en archivo JSON
+    const guardarArchivo = () => {
+        const nombreArchivo = prompt("Nombre para el archivo (sin extensión):");
+        if (!nombreArchivo) return;
+        const data = { claves };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${nombreArchivo}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // 📂 Cargar desde archivo JSON
+    const cargarArchivo = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (!data || !Array.isArray(data.claves)) {
+                    alert("Archivo inválido: debe tener un array 'claves'");
+                    return;
+                }
+                setClaves(data.claves);
+                construirArbol(data.claves);
+                setMensaje("📂 Archivo cargado correctamente");
+            } catch {
+                alert("Error: JSON inválido");
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const dibujarLineas = (nodo, parent = null, label = "") => {
         if (!nodo) return [];
         const lineas = [];
@@ -138,7 +174,7 @@ function ArbolesDigitales({ onBack }) {
     return (
         <div className="arbol-digitales-container">
             <div className="sidebar">
-                <h2>🌳 Árboles Digitales (Claves)</h2>
+                <h2>🌳 Árboles Digitales</h2>
 
                 <input
                     type="text"
@@ -146,8 +182,9 @@ function ArbolesDigitales({ onBack }) {
                     value={clave}
                     onChange={e => setClave(e.target.value.toUpperCase())}
                 />
-
-                {/* Botones en columna solo con iconos */}
+                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                    Digite una clave:
+                </label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
                     <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
                     <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
@@ -165,12 +202,21 @@ function ArbolesDigitales({ onBack }) {
                     </tbody>
                 </table>
 
+                {/* 💾 Guardar / Cargar botones */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+                    <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+                    <br></br>
+                    <label className="construir_arbols" style={{ cursor: "pointer" }}>
+                        📂 Cargar archivo
+                        <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+                    </label>
+                </div>
+
                 <button onClick={onBack} className="volver">⬅ Volver</button>
             </div>
 
             <div className="arbol-grafico">
                 <svg width="1000" height="500">
-                    {/* Líneas con etiquetas 0 y 1 */}
                     {lineas.map((l, i) => (
                         <g key={i}>
                             <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />

@@ -5,7 +5,9 @@ import Secuencial from "./internas/Secuencial";
 import Binaria from "./internas/Binaria";
 import Hash from "./internas/Hash";
 import ArbolesDigitales from "./internas/ArbolesDigitales";
+import Multiples from "./internas/Multiples";
 import PorResiduo from "./internas/PorResiduo";
+import Huffman from "./internas/Huffman";
 import "./App.css"
 import "./internas/ArbolesDigitales";
 import "./internas/Multiples";
@@ -47,8 +49,8 @@ function App() {
       {tab === "hash" && <Hash onBack={() => setTab("busqueda")} />}
       {tab === "arbol_dig" && <ArbolesDigitales onBack={() => setTab("busqueda")} />}
       {tab === "residuo" && <PorResiduo onBack={() => setTab("busqueda")} />}
-      {tab === "multiples" && <Multiples titulo="Búsquedas Múltiples" />}
-      {tab === "huffman" && <Huffman titulo="Árboles de Huffman" />}
+      {tab === "multiples" && <Multiples onBack={() => setTab("busqueda")} />}
+      {tab === "huffman" && <Huffman onBack={() => setTab("busqueda")} />}
 
       {/* Grafos */}
       {tab === "grafos" && <h2>Aquí irá la sección de grafos 🚀</h2>}
