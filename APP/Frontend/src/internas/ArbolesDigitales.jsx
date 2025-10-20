@@ -175,16 +175,16 @@ function ArbolesDigitales({ onBack }) {
         <div className="arbol-digitales-container">
             <div className="sidebar">
                 <h2>🌳 Árboles Digitales</h2>
-
+                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                    Digite una clave:
+                </label>
                 <input
                     type="text"
                     maxLength={1}
                     value={clave}
                     onChange={e => setClave(e.target.value.toUpperCase())}
                 />
-                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
-                    Digite una clave:
-                </label>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
                     <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
                     <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>

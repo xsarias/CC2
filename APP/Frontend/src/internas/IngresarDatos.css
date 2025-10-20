@@ -1,127 +1,20 @@
+/* === CONTENEDOR PRINCIPAL === */
 .contenedor {
   text-align: center;
   margin-bottom: 20px;
-  max-width: 600px;
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
-  padding: 10px;
+  padding: 15px;
+  font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
 }
 
+/* === INPUTS === */
 .input-chico {
   width: 150px;
   margin-left: 10px;
 }
 
-.input-rango {
-  width: 60px;
-  margin-left: 10px;
-}
-
-.input-clave {
-  margin-right: 10px;
-  padding: 5px;
-}
-
-.boton {
-  padding: 5px 10px;
-  margin-top: 5px;
-  margin: 0 4px;   /* 👈 espacio a los lados */
-  cursor: pointer;
-  background-color: #22777a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-  transition: background 0.3s;
-}
-
-.boton:hover {
-  background-color: #1b5f61;
-}
-
-.boton_agregar {
-  background-color: #367954;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 
-               'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-}
-
-.boton_agregar:hover {
-  background-color: #325e44;
-}
-
-/* ---------------- */
-/* NUEVO: slots bonitos */
-.contenedor-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  justify-content: center;
-}
-
-.slot {
-  position: relative;
-  width: 70px;
-  height: 70px;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  font-weight: bold;
-  margin: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  color: #000;
-}
-
-.slot.ocupado {
-  background-color: #a4cea4;
-}
-
-.slot.vacio {
-  background-color: #f3f3f3;
-}
-
-.slot-header {
-  position: absolute;
-  top: 4px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 4px;
-  font-size: 1em;
-  color: #000;
-}
-
-.slot .indice {
-  color: #333; /* índice un poco más oscuro */
-}
-
-.slot-valor {
-  font-size: 16px;
-  color: #000;
-  margin-bottom: 4px;
-}
-
-.boton_borrar {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.3em;
-  padding: 0;
-  color: rgb(139, 40, 40);
-}
-
-
-/* Input principal */
 .input-clave {
   width: 180px;
   padding: 6px 10px;
@@ -132,9 +25,16 @@
   text-align: center;
 }
 
-/* Botones principales */
-.boton {
+.input-rango {
+  width: 60px;
+  margin-left: 10px;
+}
+
+/* === BOTONES === */
+.boton,
+.boton_agregar {
   padding: 6px 12px;
+  margin: 0 4px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -144,24 +44,24 @@
   transition: background 0.3s, transform 0.2s;
 }
 
-.boton:hover {
+.boton:hover,
+.boton_agregar:hover {
   transform: scale(1.05);
 }
 
-/* Variantes */
-.boton.insertar {
-  background-color: #30f388;
-  color: #333;
+/* Colores específicos */
+.boton_agregar {
+  background-color: #367954;
 }
-.boton.insertar:hover {
-  background-color: #2e8554;
+.boton_agregar:hover {
+  background-color: #325e44;
 }
 
-.boton.buscar {
-  background-color: #1d4142;
+.boton {
+  background-color: #22777a;
 }
-.boton.buscar:hover {
-  background-color: #499a9c;
+.boton:hover {
+  background-color: #1b5f61;
 }
 
 .boton.eliminar {
@@ -170,53 +70,266 @@
 .boton.eliminar:hover {
   background-color: #94362c;
 }
+
+/* === TABLA DINÁMICA VERTICAL (base) === */
 .tabla-estructura {
   border-collapse: collapse;
-  margin: 10px auto;
+  margin: 25px auto;
+  width: 60%;
   text-align: center;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  background-color: #444444;
+}
+
+.tabla-estructura th {
+  background-color: #2b6777;
+  color: white;
+  padding: 10px;
+  font-size: 16px;
+  text-transform: uppercase;
 }
 
 .tabla-estructura td {
-  width: 60px;
-  height: 60px;
-  border: 2px solid #999;
-  vertical-align: middle;
+  border: 1.5px solid #999;
+  padding: 10px;
   font-weight: bold;
-  position: relative;
+  font-size: 15px;
+  transition: all 0.25s ease;
 }
 
-.tabla-estructura td.ocupado {
-  background-color: #a4cea4;
+/* === ANIMACIONES DE ESTADO === */
+.tabla-estructura tr.revisando td {
+  background-color: #a18927;
+  transition: all 0.4s ease;
 }
 
-.tabla-estructura td.vacio {
-  background-color: #f3f3f3;
+.tabla-estructura tr.encontrado td {
+  background-color: #4caf50;
+  color: white;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.7);
 }
 
-.tabla-estructura .indice {
-  position: absolute;
-  top: 2px;
-  left: 4px;
-  font-size: 0.7em;
-  color: #555;
+/* === ANIMACIÓN DE INSERCIÓN === */
+.nueva-fila td {
+  animation: aparecer 0.4s ease-out;
 }
 
-.tabla-estructura .valor {
-  font-size: 1.1em;
-  line-height: 60px;
-}
-/* Celda revisada en la búsqueda */
-.revisando {
-  background-color: #ffc107 !important; /* Amarillo */
-  box-shadow: 0 0 8px rgba(255,193,7,0.7);
-  transition: all 0.3s ease;
+@keyframes aparecer {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
-/* Celda encontrada */
-.encontrado {
-  background-color: #28a745 !important; /* Verde */
-  box-shadow: 0 0 10px rgba(40,167,69,0.8);
+/* === TABLA HASHMOD === */
+.tabla-hashmod {
+  border-collapse: collapse;
+  margin: 30px auto;
+  background-color: #3c3c3c;
+  border-radius: 12px;
+  overflow: hidden;
+  width: fit-content;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  transition: all 0.4s ease;
+}
+
+.tabla-hashmod th {
+  background-color: #245b6e;
+  color: white;
+  padding: 10px 15px;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.tabla-hashmod td {
+  border: 1.5px solid #777;
+  padding: 8px 12px;
   color: #fff;
+  font-weight: bold;
+  text-align: center;
+  font-size: 15px;
   transition: all 0.3s ease;
 }
 
+/* Animación de expansión progresiva */
+.tabla-hashmod.expandiendo {
+  animation: expandirTabla 0.6s ease-out forwards;
+}
+
+@keyframes expandirTabla {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Estado especial: celda actual o activa */
+.tabla-hashmod td.activo {
+  background-color: #2e8b57;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(46,139,87,0.8);
+  transform: scale(1.05);
+}
+
+/* Estado colisión o conflicto */
+.tabla-hashmod td.colision {
+  background-color: #b83b2d;
+  color: white;
+  animation: parpadeo 0.6s infinite alternate;
+}
+
+@keyframes parpadeo {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 600px) {
+  .tabla-estructura,
+  .tabla-hashmod {
+    width: 90%;
+  }
+
+  .input-clave {
+    width: 120px;
+  }
+
+  .boton {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+}
+
+.ecuacion {
+  background-color: #f7c6d0;   /* rosado suave */
+  color: #4a004e;              /* texto púrpura oscuro */
+  font-weight: bold;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 1.05rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ecuacion:hover {
+  transform: scale(1.03);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.25);
+}
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.opciones .campo {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.opciones label {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.opciones select,
+.opciones input[type="number"] {
+  padding: 6px 8px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  color: black;
+}
+
+.panel-controles {
+  color: white;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 15px;
+}
+
+.panel-controles label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.panel-controles input[type="text"] {
+  padding: 6px 8px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background-color: #fff;
+  width: 160px;
+  color: black;
+}
+
+.opciones label,
+.panel-controles label {
+  color: #fff;
+}
+
+.bloques-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.bloque {
+  background: #2c2c2c;
+  color: white;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+  min-width: 160px;
+  text-align: center;
+}
+
+.bloque h4 {
+  margin-bottom: 6px;
+  font-size: 1rem;
+  color: #ffb3b3;
+}
+
+.bloque table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bloque th,
+.bloque td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.nueva-fila {
+  background-color: #ffb3b3;
+  transition: background-color 0.8s ease;
+}

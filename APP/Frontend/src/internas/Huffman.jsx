@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 class NodoHuffman {
-  constructor(letra = null, freq = 0) {
-    this.letra = letra;     // null si es nodo interno
-    this.freq = freq;       // frecuencia
+  constructor(letra, freq) {
+    this.letra = letra;
+    this.freq = freq;
     this.izq = null;
     this.der = null;
     this.x = 0;
@@ -11,91 +11,104 @@ class NodoHuffman {
   }
 }
 
-// Combina dos nodos para generar uno nuevo
-function combinarNodos(nodos) {
-  if (nodos.length === 0) return null;
-  let arr = [...nodos];
-  const pasos = [];
-  while (arr.length > 1) {
-    arr.sort((a, b) => a.freq - b.freq);
-    const a = arr.shift();
-    const b = arr.shift();
-    const nuevo = new NodoHuffman(null, a.freq + b.freq);
-    nuevo.izq = a;
-    nuevo.der = b;
-    pasos.push(`F(${a.letra || "?"}+${b.letra || "?"})=${nuevo.freq}`);
-    arr.push(nuevo);
+// Construye el árbol de Huffman
+function construirArbol(freqs) {
+  let id = 0;
+  // Crear nodos y ordenar alfabéticamente
+  let nodos = Object.entries(freqs)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([letra, f]) => ({ nodo: new NodoHuffman(letra, f), id: id++ }));
+
+  // Combinar nodos hasta tener uno solo
+  while (nodos.length > 1) {
+    // Ordenar por frecuencia y luego por ID
+    nodos.sort((a, b) => {
+      if (a.nodo.freq !== b.nodo.freq) return a.nodo.freq - b.nodo.freq;
+      return a.id - b.id;
+    });
+
+    const a = nodos.shift();
+    const b = nodos.shift();
+
+    const nuevo = new NodoHuffman(null, a.nodo.freq + b.nodo.freq);
+    nuevo.izq = a.nodo;
+    nuevo.der = b.nodo;
+
+    nodos.push({ nodo: nuevo, id: id++ });
   }
-  return { raiz: arr[0], pasos };
+
+  return nodos[0].nodo;
 }
 
-// Calcula posiciones para dibujar
-function calcularPosiciones(nodo, depth = 0, x = 1000, offset = 500) {
+
+
+
+// Calcula posiciones (x, y) para cada nodo
+function calcularPosiciones(nodo, depth = 0, x = 600, offset = 300) {
   if (!nodo) return [];
   nodo.y = depth * 120 + 50;
   nodo.x = x;
   const posiciones = [nodo];
-  if (nodo.izq) posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - offset, offset / 2));
-  if (nodo.der) posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + offset, offset / 2));
+  if (nodo.izq)
+    posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - offset, offset / 2));
+  if (nodo.der)
+    posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + offset, offset / 2));
   return posiciones;
 }
 
+// Dibuja líneas entre nodos
 function dibujarLineas(nodo, parent = null, label = "") {
   if (!nodo) return [];
   const lineas = [];
-  if (parent) lineas.push({ x1: parent.x, y1: parent.y, x2: nodo.x, y2: nodo.y, label });
+  if (parent)
+    lineas.push({ x1: parent.x, y1: parent.y, x2: nodo.x, y2: nodo.y, label });
   if (nodo.izq) lineas.push(...dibujarLineas(nodo.izq, nodo, "0"));
   if (nodo.der) lineas.push(...dibujarLineas(nodo.der, nodo, "1"));
   return lineas;
 }
 
+// Ecuación lineal (paréntesis y letras)
+function ecuacionLineal(nodo) {
+  if (!nodo) return "";
+  if (!nodo.izq && !nodo.der) return nodo.letra;
+  return `(${ecuacionLineal(nodo.izq)} + ${ecuacionLineal(nodo.der)})`;
+}
+
 export default function Huffman({ onBack }) {
-  const [letra, setLetra] = useState("");
+  const [texto, setTexto] = useState("");
   const [frecuencias, setFrecuencias] = useState({});
   const [raiz, setRaiz] = useState(null);
+  const [ecuacion, setEcuacion] = useState("");
   const [mensaje, setMensaje] = useState("");
-  const [pasos, setPasos] = useState([]);
-  const [letraResaltada, setLetraResaltada] = useState(null);
-  const [buscando, setBuscando] = useState(false);
 
-  const agregarLetra = () => {
-    const l = letra.toUpperCase();
-    if (!l.match(/[A-Z]/)) return setMensaje("❌ Solo letras A-Z");
-    const nuevasFreq = { ...frecuencias, [l]: (frecuencias[l] || 0) + 1 };
-    setFrecuencias(nuevasFreq);
-    setLetra("");
-    setMensaje(`✅ "${l}" agregada`);
-    construirArbol(nuevasFreq);
+  // Generar árbol a partir de una palabra
+  const generarArbol = () => {
+    if (!texto.trim()) {
+      setMensaje("⚠️ Ingresa una palabra para generar el árbol.");
+      return;
+    }
+
+    const total = texto.length;
+    const freqs = {};
+    for (let l of texto.toUpperCase()) {
+      if (/[A-Z]/.test(l)) freqs[l] = (freqs[l] || 0) + 1 / total;
+    }
+
+    const raizNueva = construirArbol(freqs);
+    setFrecuencias(freqs);
+    setRaiz(raizNueva);
+    setEcuacion(ecuacionLineal(raizNueva));
+    setMensaje("✅ Árbol generado correctamente.");
   };
 
-  const construirArbol = (freqs) => {
-    const nodos = Object.entries(freqs).map(([letra, f]) => new NodoHuffman(letra, f));
-    const { raiz, pasos } = combinarNodos(nodos);
-    setRaiz(raiz);
-    setPasos(pasos);
-  };
-
-  const eliminarLetra = () => {
-    const l = letra.toUpperCase();
-    if (!frecuencias[l]) return setMensaje(`❌ "${l}" no existe`);
-    const nuevasFreq = { ...frecuencias };
-    nuevasFreq[l] -= 1;
-    if (nuevasFreq[l] === 0) delete nuevasFreq[l];
-    setFrecuencias(nuevasFreq);
-    setLetra("");
-    setMensaje(`🗑 "${l}" eliminada`);
-    construirArbol(nuevasFreq);
-  };
-
-  const nodos = calcularPosiciones(raiz);
-  const lineas = dibujarLineas(raiz);
-
-  // Guardar / cargar
+  // Guardar JSON
   const guardarArchivo = () => {
-    const nombre = prompt("Nombre del archivo:");
+    const nombre = prompt("💾 Nombre del archivo:");
     if (!nombre) return;
-    const data = { frecuencias };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const data = { texto, frecuencias };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -104,6 +117,7 @@ export default function Huffman({ onBack }) {
     URL.revokeObjectURL(url);
   };
 
+  // Cargar JSON
   const cargarArchivo = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -111,66 +125,155 @@ export default function Huffman({ onBack }) {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (!data || typeof data.frecuencias !== "object") return alert("Archivo inválido");
+        if (!data || typeof data.frecuencias !== "object") {
+          alert("❌ Archivo inválido.");
+          return;
+        }
+        setTexto(data.texto || "");
         setFrecuencias(data.frecuencias);
-        construirArbol(data.frecuencias);
-        setMensaje("📂 Archivo cargado correctamente");
-      } catch { alert("JSON inválido"); }
+        const r = construirArbol(data.frecuencias);
+        setRaiz(r);
+        setEcuacion(ecuacionLineal(r));
+        setMensaje("📂 Archivo cargado correctamente.");
+      } catch {
+        alert("❌ Error al leer el archivo.");
+      }
     };
     reader.readAsText(file);
   };
 
+  const nodos = raiz ? calcularPosiciones(raiz) : [];
+  const lineas = raiz ? dibujarLineas(raiz) : [];
+
   return (
     <div className="arbol-digitales-container">
       <div className="sidebar">
-        <h2>🌳 Huffman</h2>
-        <input type="text" maxLength={1} value={letra} onChange={e => setLetra(e.target.value.toUpperCase())}/>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-          <button onClick={agregarLetra} disabled={buscando}>➕ Añadir</button>
-          <button onClick={eliminarLetra} disabled={buscando}>🗑 Eliminar</button>
-        </div>
-        {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
+        <h2>🌳 Árbol de Huffman</h2>
+        <p>Inserte una palabra</p>
 
-        <table>
-          <thead><tr><th>Letra</th><th>Freq</th></tr></thead>
-          <tbody>{Object.entries(frecuencias).map(([l,f],i)=><tr key={i}><td>{l}</td><td>{f}</td></tr>)}</tbody>
-        </table>
+        <input
+          type="text"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value.toUpperCase())}
+          placeholder="Ejemplo: MURCIELAGO"
+          maxLength={30}
+        />
 
-        {/* Guardar / cargar */}
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+          <button onClick={generarArbol}>⚙️ Generar árbol</button>
           <button onClick={guardarArchivo}>💾 Guardar archivo</button>
           <label style={{ cursor: "pointer" }}>
             📂 Cargar archivo
-            <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }}/>
+            <input
+              type="file"
+              accept=".json"
+              onChange={cargarArchivo}
+              style={{ display: "none" }}
+            />
           </label>
         </div>
 
-        {/* Mostrar pasos del árbol */}
-        {pasos.length > 0 && <div style={{ marginTop: "10px" }}>
-          <h4>📐 Ecuación del árbol</h4>
-          <ul>
-            {pasos.map((p,i)=><li key={i}>{p}</li>)}
-          </ul>
-        </div>}
+        {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
+        {/* Ecuación lineal */}
+        {ecuacion && (
+          <div style={{ marginTop: "15px", textAlign: "center" }}>
+            <h4>🧮 Ecuación del árbol:</h4>
+            <p
+              style={{
+                fontFamily: "monospace",
+                fontSize: "16px",
+                background: "#1a411aff",
+                display: "inline-block",
+                padding: "8px 12px",
+                borderRadius: "8px",
+              }}
+            >
+              {ecuacion}
+            </p>
+          </div>
+        )}
+        {/* Tabla de frecuencias */}
+        {Object.keys(frecuencias).length > 0 && (
+          <>
+            <h4>📊 Frecuencias</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Letra</th>
+                  <th>Frecuencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(frecuencias).map(([l, f], i) => (
+                  <tr key={i}>
+                    <td>{l}</td>
+                    <td>{f.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
 
         <button onClick={onBack} className="volver">⬅ Volver</button>
       </div>
 
-      <div className="arbol-grafico" style={{ overflow: "auto" }}>
-        <svg width="2000" height="1000">
-          {lineas.map((l,i)=><g key={i}>
-            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2"/>
-            <text x={(l.x1+l.x2)/2} y={(l.y1+l.y2)/2-5} textAnchor="middle" fontSize="12">{l.label}</text>
-          </g>)}
-          {nodos.map((n,i)=><g key={i}>
-            <circle cx={n.x} cy={n.y} r="18"
-              fill={n.letra? "#ffcb6b":"#eee"}
-              stroke="#aaa" strokeWidth="2"/>
-            {n.letra && <text x={n.x} y={n.y+5} textAnchor="middle" fontWeight="bold">{n.letra}</text>}
-            {!n.letra && <text x={n.x} y={n.y+5} textAnchor="middle" fontSize="12">{n.freq}</text>}
-          </g>)}
+      {/* Contenedor del árbol */}
+      <div className="arbol-grafico" style={{ overflow: "auto", background: "#fafafa" }}>
+        <svg width="2000" height="900">
+          {/* Líneas */}
+          {lineas.map((l, i) => (
+            <g key={i}>
+              <line
+                x1={l.x1}
+                y1={l.y1}
+                x2={l.x2}
+                y2={l.y2}
+                stroke="#777"
+                strokeWidth="2"
+              />
+              <text
+                x={(l.x1 + l.x2) / 2}
+                y={(l.y1 + l.y2) / 2 - 5}
+                textAnchor="middle"
+                fontSize="12"
+                fill="#333"
+              >
+                {l.label}
+              </text>
+            </g>
+          ))}
+
+          {/* Nodos */}
+          {nodos.map((n, i) => (
+            <g key={i}>
+              <circle
+                cx={n.x}
+                cy={n.y}
+                r="18"
+                fill={n.letra ? "#ffd166" : "#cce3de"}
+                stroke="#555"
+                strokeWidth="2"
+              />
+              <text
+                x={n.x}
+                y={n.y + 5}
+                textAnchor="middle"
+                fontWeight="bold"
+                fontSize="13"
+              >
+                {n.letra ? n.letra : n.freq.toFixed(2)}
+              </text>
+            </g>
+          ))}
         </svg>
+
+
       </div>
+
+
     </div>
+
   );
+
 }

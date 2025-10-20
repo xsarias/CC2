@@ -13,6 +13,8 @@ import "./internas/ArbolesDigitales";
 import "./internas/Multiples";
 import "./internas/PorResiduo";
 import "./internas/Huffman";
+import SecuencialEx from "./externas/SecuencialEx";
+import BinariaEx from "./externas/BinariaEx";
 
 function App() {
   const [message, setMessage] = useState("Cargando...");
@@ -43,7 +45,7 @@ function App() {
       {/* Menú de algoritmos */}
       {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} />}
 
-   
+
       {tab === "secuencial" && <Secuencial array={datos} onBack={() => setTab("busqueda")} />}
       {tab === "binaria" && <Binaria array={datos} onBack={() => setTab("busqueda")} />}
       {tab === "hash" && <Hash onBack={() => setTab("busqueda")} />}
@@ -51,6 +53,10 @@ function App() {
       {tab === "residuo" && <PorResiduo onBack={() => setTab("busqueda")} />}
       {tab === "multiples" && <Multiples onBack={() => setTab("busqueda")} />}
       {tab === "huffman" && <Huffman onBack={() => setTab("busqueda")} />}
+
+      {tab == "SecuencialEx" && <SecuencialEx onBack={() => setTab("busqueda")} />}
+      {tab == "BinariaEx" && <BinariaEx onBack={() => setTab("busqueda")} />}
+
 
       {/* Grafos */}
       {tab === "grafos" && <h2>Aquí irá la sección de grafos 🚀</h2>}

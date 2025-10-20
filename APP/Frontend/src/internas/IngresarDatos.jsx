@@ -40,7 +40,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     onDataChange(nuevo, { tamanoClave, tamanoEstructura });
   };
 
-  // ✅ Buscar (delegado a Secuencial)
+  // ✅ Buscar (delegado a componente externo)
   const buscarClave = () => {
     if (!clave) return;
     onBuscar(clave, array);
@@ -61,7 +61,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ Cargar archivo JSON (rápido)
+  // ✅ Cargar archivo JSON
   const recuperarArchivo = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -70,7 +70,6 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-
         if (!data || !Array.isArray(data.valores)) {
           alert("Archivo inválido: debe tener un array 'valores'");
           return;
@@ -85,7 +84,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
           tamanoEstructura: Number(data.tamanoEstructura) || data.valores.length,
         });
 
-        e.target.value = ""; // 🔥 Permite volver a cargar el mismo archivo sin recargar
+        e.target.value = "";
       } catch (error) {
         alert("Error: JSON inválido");
       }
@@ -93,7 +92,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     reader.readAsText(file);
   };
 
-  // ✅ Manejo del input (mensaje si pasa del tamaño)
+  // ✅ Manejo del input
   const handleChange = (e) => {
     const value = e.target.value;
     if (value.length > tamanoClave) {
@@ -103,21 +102,13 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     setClave(value);
   };
 
-  // ✅ Generar tabla
-  const generarTabla = () => {
-    const filas = [];
-    const columnas = 10;
-    for (let i = 0; i < tamanoEstructura; i += columnas) {
-      const fila = [];
-      for (let j = 0; j < columnas; j++) {
-        const idx = i + j;
-        if (idx >= tamanoEstructura) break;
-        fila.push(idx);
-      }
-      filas.push(fila);
-    }
-    return filas;
-  };
+  // ✅ Tabla: siempre muestra índice 1 y n (final)
+  // y luego las claves insertadas
+  const filas = [
+    { indice: 1, valor: array[0] || "" }, // primer cubo
+    ...array.slice(1).map((v, i) => ({ indice: i + 2, valor: v })), // resto de claves
+    { indice: tamanoEstructura, valor: "" } // último cubo (referencia final)
+  ];
 
   return (
     <div className="contenedor">
@@ -148,7 +139,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
       </div>
 
       {/* Input + botones */}
-      <div style={{ marginBottom: "10px", display: "flex", gap: "6px", justifyContent: "center" }}>
+      <div className="acciones">
         <input
           type="text"
           value={clave}
@@ -163,27 +154,26 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
 
       <p>{`Claves agregadas: ${array.length} / ${tamanoEstructura}`}</p>
 
-      {/* Tabla dinámica con animación */}
+      {/* 🧱 Tabla vertical dinámica */}
       <table className="tabla-estructura">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th>Clave</th>
+          </tr>
+        </thead>
         <tbody>
-          {generarTabla().map((fila, fIndex) => (
-            <tr key={fIndex}>
-              {fila.map((idx) => {
-                let clase = array[idx] ? "ocupado" : "vacio";
-
-                // 🔥 Animación búsqueda
-                if (idx === currentIndex) clase += " revisando";
-                if (idx === foundIndex) clase += " encontrado";
-
-                return (
-                  <td key={idx} className={clase}>
-                    <div className="indice">{idx + 1}</div>
-                    <div className="valor">{array[idx] || ""}</div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {filas.map((fila, i) => {
+            let clase = "";
+            if (i === currentIndex) clase = "revisando";
+            if (i === foundIndex) clase = "encontrado";
+            return (
+              <tr key={i} className={clase}>
+                <td>{fila.indice}</td>
+                <td>{fila.valor}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
