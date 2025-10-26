@@ -51,10 +51,10 @@
 
 /* Colores específicos */
 .boton_agregar {
-  background-color: #367954;
+  background-color: #22777a;
 }
 .boton_agregar:hover {
-  background-color: #325e44;
+  background-color: #22777a;
 }
 
 .boton {
@@ -65,10 +65,10 @@
 }
 
 .boton.eliminar {
-  background-color: #77352e;
+  background-color: #22777a;
 }
 .boton.eliminar:hover {
-  background-color: #94362c;
+  background-color: #22777a;
 }
 
 /* === TABLA DINÁMICA VERTICAL (base) === */
