@@ -115,7 +115,6 @@ function ArbolesDigitales({ onBack }) {
         setBuscando(false);
     };
 
-    // 💾 Guardar en archivo JSON
     const guardarArchivo = () => {
         const nombreArchivo = prompt("Nombre para el archivo (sin extensión):");
         if (!nombreArchivo) return;
@@ -129,7 +128,6 @@ function ArbolesDigitales({ onBack }) {
         URL.revokeObjectURL(url);
     };
 
-    // 📂 Cargar desde archivo JSON
     const cargarArchivo = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -172,79 +170,88 @@ function ArbolesDigitales({ onBack }) {
     const lineas = raiz ? dibujarLineas(raiz) : [];
 
     return (
-        <div className="arbol-digitales-container">
-            <div className="sidebar">
-                <h2>🌳 Árboles Digitales</h2>
-                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
-                    Digite una clave:
-                </label>
-                <input
-                    type="text"
-                    maxLength={1}
-                    value={clave}
-                    onChange={e => setClave(e.target.value.toUpperCase())}
-                />
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
-                    <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                    <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>🗑️ Eliminar</button>
-                </div>
-
-                {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
-
-                <table>
-                    <thead><tr><th>Clave</th><th>Código</th></tr></thead>
-                    <tbody>
-                        {claves.map((l, i) => (
-                            <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                {/* 💾 Guardar / Cargar botones */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
-                    <br></br>
-                    <label className="construir_arbols" style={{ cursor: "pointer" }}>
-                        📂 Cargar archivo
-                        <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+        <>
+            <div className="arbol-digitales-container" style={{ display: "flex", gap: "20px" }}>
+                <div className="sidebar">
+                    <h2>🌳 Árboles Digitales</h2>
+                    <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                        Digite una clave:
                     </label>
+                    <input
+                        type="text"
+                        maxLength={1}
+                        value={clave}
+                        onChange={e => setClave(e.target.value.toUpperCase())}
+                    />
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+                        <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
+                        <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>🗑️ Eliminar</button>
+                    </div>
+
+                    {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
+
+                    <table>
+                        <thead><tr><th>Clave</th><th>Código</th></tr></thead>
+                        <tbody>
+                            {claves.map((l, i) => (
+                                <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    
                 </div>
 
-                <button onClick={onBack} className="volver">⬅ Volver</button>
+                <div className="arbol-grafico">
+                    <svg width="1000" height="500">
+                        {lineas.map((l, i) => (
+                            <g key={i}>
+                                <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
+                                <text
+                                    x={(l.x1 + l.x2) / 2}
+                                    y={(l.y1 + l.y2) / 2 - 5}
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="#333"
+                                >
+                                    {l.label}
+                                </text>
+                            </g>
+                        ))}
+                        {nodos.map((n, i) => (
+                            <g key={i}>
+                                <circle
+                                    cx={n.x} cy={n.y} r="20"
+                                    fill={n.letra === letraResaltada ? "#ff6666" : "#ffcb6b"}
+                                    stroke={n.letra === letraResaltada ? "#c0392b" : "#e67e22"}
+                                    strokeWidth="2"
+                                />
+                                <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>
+                            </g>
+                        ))}
+                    </svg>
+                </div>
             </div>
 
-            <div className="arbol-grafico">
-                <svg width="1000" height="500">
-                    {lineas.map((l, i) => (
-                        <g key={i}>
-                            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
-                            <text
-                                x={(l.x1 + l.x2) / 2}
-                                y={(l.y1 + l.y2) / 2 - 5}
-                                textAnchor="middle"
-                                fontSize="12"
-                                fill="#333"
-                            >
-                                {l.label}
-                            </text>
-                        </g>
-                    ))}
-                    {nodos.map((n, i) => (
-                        <g key={i}>
-                            <circle
-                                cx={n.x} cy={n.y} r="20"
-                                fill={n.letra === letraResaltada ? "#ff6666" : "#ffcb6b"}
-                                stroke={n.letra === letraResaltada ? "#c0392b" : "#e67e22"}
-                                strokeWidth="2"
-                            />
-                            <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>
-                        </g>
-                    ))}
-                </svg>
-            </div>
-        </div>
+            {/* Botones fuera del árbol */}
+            <section
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginTop: "20px"
+                }}
+            >
+                <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+                <label className="construir_arbols" style={{ cursor: "pointer" }}>
+                    📂 Cargar archivo
+                    <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+                </label>
+                <button onClick={onBack} className="volver">⬅ Volver</button>
+            </section>
+        </>
     );
 }
 

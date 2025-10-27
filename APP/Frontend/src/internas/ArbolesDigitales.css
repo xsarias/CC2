@@ -46,7 +46,7 @@
   border: 1px solid #ccc;
   background-color: #fefefe;
   padding: 10px;
-  height: 500px; /* altura fija para no desbordar la página */
+  height: 600px; /* altura fija para no desbordar la página */
 }
 
 .titulo-arbol {
@@ -57,7 +57,7 @@
 
 .construir_arbols{
     margin-right: 10px;
-  background-color: #6a1b9a;   /* morado elegante */
+  background-color:  #10494b;   
   color: white;               /* texto blanco */
   padding: 10px 18px;          /* espacio interno */
   border: none;                /* sin borde duro */
@@ -68,12 +68,17 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* sombra sutil */
   transition: all 0.3s ease;
 }
+.construir_arbols:hover {
+  background-color: #156d70;   /* tono más claro o distinto */
+  transform: scale(1.05);      /* (opcional) efecto de “crecer” un poco */
+}
+
 
 .volver{
     padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-  background-color: #6a1b9a;
+  background-color: #75379b;
   color: white;
   border: none;
   border-radius: 6px;

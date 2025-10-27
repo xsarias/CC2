@@ -22,7 +22,7 @@ class Nodo {
 function insertarPorResiduo(nodo, letra, codigo, i = 0) {
     if (!nodo) nodo = new Nodo();
 
-    // Caso 1: el nodo está vacío y no tiene hijos → guardamos la letra directamente
+    // Caso 1: el nodo está vacío y no tiene hijos
     if (!nodo.letra && !nodo.izq && !nodo.der) {
         nodo.letra = letra;
         return nodo;
@@ -73,6 +73,7 @@ function PorResiduo({ onBack }) {
     const [nodoResaltado, setNodoResaltado] = useState(null);
     const [buscando, setBuscando] = useState(false);
 
+    // 🔹 Construye el árbol con base en las claves actuales
     const construirArbol = (arrayClaves) => {
         let r = null;
         arrayClaves.forEach(letra => {
@@ -81,6 +82,29 @@ function PorResiduo({ onBack }) {
         });
         setRaiz(r);
         setNodoResaltado(null);
+    };
+
+    // 🔹 Guardar árbol en localStorage
+    const guardarArbol = () => {
+        if (claves.length === 0) {
+            setMensaje("⚠ No hay claves para guardar");
+            return;
+        }
+        localStorage.setItem("arbolResiduo", JSON.stringify(claves));
+        setMensaje("💾 Árbol guardado correctamente");
+    };
+
+    // 🔹 Cargar árbol desde localStorage
+    const cargarArbol = () => {
+        const datos = localStorage.getItem("arbolResiduo");
+        if (!datos) {
+            setMensaje("⚠ No hay árbol guardado");
+            return;
+        }
+        const arrayClaves = JSON.parse(datos);
+        setClaves(arrayClaves);
+        construirArbol(arrayClaves);
+        setMensaje("📂 Árbol cargado correctamente");
     };
 
     const agregarClave = () => {
@@ -132,7 +156,7 @@ function PorResiduo({ onBack }) {
 
         let nodo = raiz;
         for (let i = 0; i < codigo.length; i++) {
-            setNodoResaltado(nodo); // 🔥 resaltar nodo actual
+            setNodoResaltado(nodo);
             await new Promise(res => setTimeout(res, 500));
 
             const bit = codigo[i];
@@ -146,7 +170,7 @@ function PorResiduo({ onBack }) {
             }
         }
 
-        setNodoResaltado(nodo); // 🔥 resaltar último nodo
+        setNodoResaltado(nodo);
         if (nodo.letra === letra) {
             setMensaje(`✅ "${letra}" encontrada`);
         } else {
@@ -177,11 +201,11 @@ function PorResiduo({ onBack }) {
     const lineas = raiz ? dibujarLineas(raiz) : [];
 
     return (
+        <>
         <div className="arbol-digitales-container">
             <div className="sidebar">
                 <h2>🌳 Árbol por Residuo</h2>
 
-                
                 <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
                     Digite una clave:
                 </label>
@@ -209,11 +233,11 @@ function PorResiduo({ onBack }) {
                     </tbody>
                 </table>
 
-                <button onClick={onBack} className="volver">⬅ Volver</button>
+                
             </div>
 
             <div className="arbol-grafico">
-                <svg width="1000" height="500">
+                <svg width="2000" height="700">
                     {lineas.map((l, i) => (
                         <g key={i}>
                             <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
@@ -260,6 +284,20 @@ function PorResiduo({ onBack }) {
                 </svg>
             </div>
         </div>
+        {/* Botones debajo del árbol */}
+            <section
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginTop: "20px"
+                }}
+            >
+                <button onClick={guardarArbol} className="construir_arbols">💾 Guardar</button>
+                <button onClick={cargarArbol} className="construir_arbols">📂 Cargar</button>
+                <button onClick={onBack} className="volver">⬅ Volver</button>
+            </section>
+        </>
     );
 }
 

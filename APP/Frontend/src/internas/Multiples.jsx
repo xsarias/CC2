@@ -168,54 +168,66 @@ export default function Multiples({ onBack }) {
     const offsetY = -yMin + 50;
 
     return (
-        <div className="arbol-digitales-container">
-            <div className="sidebar">
-                <h2>🌳 Búsqueda Múltiple</h2>
-                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
-                    Digite una clave:
-                </label>
-                <input type="text" maxLength={1} value={clave} onChange={e => setClave(e.target.value.toUpperCase())} />
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={agregarLetra} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
-                    <button onClick={buscarLetra} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                    <button onClick={eliminarLetraClick} className="construir_arbols" disabled={buscando}>🗑 Eliminar</button>
-                </div>
-
-                {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
-
-                <table>
-                    <thead><tr><th>Letra</th><th>Código</th></tr></thead>
-                    <tbody>{letras.map((l,i)=><tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>)}</tbody>
-                </table>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
-                    <label className="construir_arbols" style={{ cursor: "pointer" }}>
-                        📂 Cargar archivo
-                        <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+        <>
+            <div className="arbol-digitales-container">
+                <div className="sidebar">
+                    <h2>🌳 Búsqueda Múltiple</h2>
+                    <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                        Digite una clave:
                     </label>
+                    <input type="text" maxLength={1} value={clave} onChange={e => setClave(e.target.value.toUpperCase())} />
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+                        <button onClick={agregarLetra} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
+                        <button onClick={buscarLetra} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarLetraClick} className="construir_arbols" disabled={buscando}>🗑 Eliminar</button>
+                    </div>
+
+                    {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
+
+                    <table>
+                        <thead><tr><th>Claves</th><th>Código</th></tr></thead>
+                        <tbody>{letras.map((l, i) => <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>)}</tbody>
+                    </table>
+
+                    
+
+                    
                 </div>
 
+                <div className="arbol-grafico" style={{ overflow: "auto", height: "700px" }}>
+                    <svg width={2000} height={1000}>
+                        <g transform={`translate(${offsetX},${offsetY}) scale(${scale})`}>
+                            {lineas.map((l, i) => <g key={i}>
+                                <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
+                                <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 5} textAnchor="middle" fontSize="12" fill="#333">{l.label}</text>
+                            </g>)}
+                            {nodos.map((n, i) => <g key={i}>
+                                <circle cx={n.x} cy={n.y} r="15"
+                                    fill={n.letra === letraResaltada ? "#ff6666" : n.letra ? "#ffcb6b" : "#eee"}
+                                    stroke={n.letra === letraResaltada ? "#c0392b" : "#aaa"} strokeWidth="2" />
+                                {n.letra && <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>}
+                            </g>)}
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            {/* Botones fuera del árbol */}
+            <section
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginTop: "20px"
+                }}
+            >
+                <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+                <label className="construir_arbols" style={{ cursor: "pointer" }}>
+                    📂 Cargar archivo
+                    <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+                </label>
                 <button onClick={onBack} className="volver">⬅ Volver</button>
-            </div>
-
-            <div className="arbol-grafico" style={{ overflow: "auto", height: "800px" }}>
-                <svg width={2000} height={1000}>
-                    <g transform={`translate(${offsetX},${offsetY}) scale(${scale})`}>
-                        {lineas.map((l,i)=><g key={i}>
-                            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2"/>
-                            <text x={(l.x1+l.x2)/2} y={(l.y1+l.y2)/2-5} textAnchor="middle" fontSize="12" fill="#333">{l.label}</text>
-                        </g>)}
-                        {nodos.map((n,i)=><g key={i}>
-                            <circle cx={n.x} cy={n.y} r="15"
-                                fill={n.letra===letraResaltada?"#ff6666":n.letra?"#ffcb6b":"#eee"}
-                                stroke={n.letra===letraResaltada?"#c0392b":"#aaa"} strokeWidth="2"/>
-                            {n.letra && <text x={n.x} y={n.y+5} textAnchor="middle" fontWeight="bold">{n.letra}</text>}
-                        </g>)}
-                    </g>
-                </svg>
-            </div>
-        </div>
+            </section>
+        </>
     );
 }
