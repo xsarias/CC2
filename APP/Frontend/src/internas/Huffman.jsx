@@ -11,39 +11,49 @@ class NodoHuffman {
   }
 }
 
-// Construye el árbol de Huffman
+// ===============================
+// 🔹 Construcción del árbol de Huffman
+// ===============================
 function construirArbol(freqs) {
-  let id = 0;
-  // Crear nodos y ordenar alfabéticamente
-  let nodos = Object.entries(freqs)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([letra, f]) => ({ nodo: new NodoHuffman(letra, f), id: id++ }));
+  let nodos = Object.entries(freqs).map(
+    ([letra, freq]) => new NodoHuffman(letra, freq)
+  );
 
-  // Combinar nodos hasta tener uno solo
   while (nodos.length > 1) {
-    // Ordenar por frecuencia y luego por ID
-    nodos.sort((a, b) => {
-      if (a.nodo.freq !== b.nodo.freq) return a.nodo.freq - b.nodo.freq;
-      return a.id - b.id;
-    });
+    // Ordenar de menor a mayor frecuencia
+    nodos.sort((a, b) => a.freq - b.freq);
 
-    const a = nodos.shift();
-    const b = nodos.shift();
+    const izq = nodos.shift();
+    const der = nodos.shift();
 
-    const nuevo = new NodoHuffman(null, a.nodo.freq + b.nodo.freq);
-    nuevo.izq = a.nodo;
-    nuevo.der = b.nodo;
-
-    nodos.push({ nodo: nuevo, id: id++ });
+    const nuevo = new NodoHuffman(null, izq.freq + der.freq);
+    nuevo.izq = izq;
+    nuevo.der = der;
+    nodos.push(nuevo);
   }
 
-  return nodos[0].nodo;
+  return nodos[0];
 }
 
+// ===============================
+// 🔹 Generar códigos Huffman recursivamente
+// ===============================
+function generarCodigos(nodo, codigo = "", tabla = {}) {
+  if (!nodo) return;
 
+  if (!nodo.izq && !nodo.der) {
+    tabla[nodo.letra] = codigo || "0"; // por si solo hay una letra
+  } else {
+    generarCodigos(nodo.izq, codigo + "0", tabla);
+    generarCodigos(nodo.der, codigo + "1", tabla);
+  }
 
+  return tabla;
+}
 
-// Calcula posiciones (x, y) para cada nodo
+// ===============================
+// 🔹 Calcular posiciones para dibujar el árbol
+// ===============================
 function calcularPosiciones(nodo, depth = 0, x = 600, offset = 300) {
   if (!nodo) return [];
   nodo.y = depth * 120 + 50;
@@ -56,7 +66,9 @@ function calcularPosiciones(nodo, depth = 0, x = 600, offset = 300) {
   return posiciones;
 }
 
-// Dibuja líneas entre nodos
+// ===============================
+// 🔹 Dibujar líneas entre nodos
+// ===============================
 function dibujarLineas(nodo, parent = null, label = "") {
   if (!nodo) return [];
   const lineas = [];
@@ -67,21 +79,27 @@ function dibujarLineas(nodo, parent = null, label = "") {
   return lineas;
 }
 
-// Ecuación lineal (paréntesis y letras)
+// ===============================
+// 🔹 Ecuación lineal (solo para mostrar estructura)
+// ===============================
 function ecuacionLineal(nodo) {
   if (!nodo) return "";
   if (!nodo.izq && !nodo.der) return nodo.letra;
   return `(${ecuacionLineal(nodo.izq)} + ${ecuacionLineal(nodo.der)})`;
 }
 
+// ===============================
+// 🌳 Componente principal React
+// ===============================
 export default function Huffman({ onBack }) {
   const [texto, setTexto] = useState("");
   const [frecuencias, setFrecuencias] = useState({});
   const [raiz, setRaiz] = useState(null);
   const [ecuacion, setEcuacion] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [codigos, setCodigos] = useState({});
 
-  // Generar árbol a partir de una palabra
+  // Generar árbol desde el texto
   const generarArbol = () => {
     if (!texto.trim()) {
       setMensaje("⚠️ Ingresa una palabra para generar el árbol.");
@@ -95,7 +113,10 @@ export default function Huffman({ onBack }) {
     }
 
     const raizNueva = construirArbol(freqs);
+    const tablaCodigos = generarCodigos(raizNueva);
+
     setFrecuencias(freqs);
+    setCodigos(tablaCodigos);
     setRaiz(raizNueva);
     setEcuacion(ecuacionLineal(raizNueva));
     setMensaje("✅ Árbol generado correctamente.");
@@ -132,6 +153,8 @@ export default function Huffman({ onBack }) {
         setTexto(data.texto || "");
         setFrecuencias(data.frecuencias);
         const r = construirArbol(data.frecuencias);
+        const tabla = generarCodigos(r);
+        setCodigos(tabla);
         setRaiz(r);
         setEcuacion(ecuacionLineal(r));
         setMensaje("📂 Archivo cargado correctamente.");
@@ -146,134 +169,134 @@ export default function Huffman({ onBack }) {
   const lineas = raiz ? dibujarLineas(raiz) : [];
 
   return (
-    <div className="arbol-digitales-container">
-      <div className="sidebar">
-        <h2>🌳 Árbol de Huffman</h2>
-        <p>Inserte una palabra</p>
+    <>
+      <div className="arbol-digitales-container">
+        <div className="sidebar">
+          <h2>🌳 Árbol de Huffman</h2>
+          <p>Inserte una palabra</p>
 
-        <input
-          type="text"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value.toUpperCase())}
-          placeholder="Ejemplo: MURCIELAGO"
-          maxLength={30}
-        />
+          <input
+            type="text"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value.toUpperCase())}
+            placeholder="Ejemplo: MURCIELAGO"
+            maxLength={30}
+          />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-          <button onClick={generarArbol}>⚙️ Generar árbol</button>
-          <button onClick={guardarArchivo}>💾 Guardar archivo</button>
-          <label style={{ cursor: "pointer" }}>
-            📂 Cargar archivo
-            <input
-              type="file"
-              accept=".json"
-              onChange={cargarArchivo}
-              style={{ display: "none" }}
-            />
-          </label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+            <button onClick={generarArbol} className="construir_arbols">⚙️ Generar árbol</button>
+
+          </div>
+
+
+          {/* Tabla de códigos Huffman */}
+          {Object.keys(codigos).length > 0 && (
+            <>
+              <h4>Códigos de Huffman</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Clave</th>
+                    <th>Frecuencia</th>
+                    <th>Código</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(codigos).map(([letra, codigo], i) => (
+                    <tr key={i}>
+                      <td>{letra}</td>
+                      <td>{frecuencias[letra]?.toFixed(2)}</td>
+                      <td style={{ fontFamily: "monospace" }}>{codigo}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
 
-        {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
-        {/* Ecuación lineal */}
-        {ecuacion && (
-          <div style={{ marginTop: "15px", textAlign: "center" }}>
-            <h4>🧮 Ecuación del árbol:</h4>
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "16px",
-                background: "#1a411aff",
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: "8px",
-              }}
-            >
-              {ecuacion}
-            </p>
-          </div>
-        )}
-        {/* Tabla de frecuencias */}
-        {Object.keys(frecuencias).length > 0 && (
-          <>
-            <h4>📊 Frecuencias</h4>
-            <table>
-              <thead>
-                <tr>
-                  <th>Letra</th>
-                  <th>Frecuencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(frecuencias).map(([l, f], i) => (
-                  <tr key={i}>
-                    <td>{l}</td>
-                    <td>{f.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+        {/* SVG del árbol */}
+        <div className="arbol-grafico" style={{ overflow: "auto", background: "#fafafa" }}>
+          <svg width="3000" height="900">
+            {/* Líneas */}
+            {lineas.map((l, i) => (
+              <g key={i}>
+                <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#777" strokeWidth="2" />
+                <text
+                  x={(l.x1 + l.x2) / 2}
+                  y={(l.y1 + l.y2) / 2 - 5}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#333"
+                >
+                  {l.label}
+                </text>
+              </g>
+            ))}
 
+            {/* Nodos */}
+            {nodos.map((n, i) => (
+              <g key={i}>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r="18"
+                  fill={n.letra ? "#ffd166" : "#cce3de"}
+                  stroke="#555"
+                  strokeWidth="2"
+                />
+                <text
+                  x={n.x}
+                  y={n.y + 5}
+                  textAnchor="middle"
+                  fontWeight="bold"
+                  fontSize="13"
+                >
+                  {n.letra ? n.letra : n.freq.toFixed(2)}
+                </text>
+              </g>
+            ))}
+          </svg>
+        </div>
+      </div>
+      {/* Ecuación en bloque separado */}
+      {ecuacion && (
+        <div style={{ marginTop: "20px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+          <span style={{ fontWeight: "bold" }}>Ecuación del árbol:</span>
+          <span
+            style={{
+              fontFamily: "monospace",
+              fontSize: "16px",
+              background: "#1a411aff",
+              color: "#fff",
+              padding: "2px 8px",
+              borderRadius: "8px",
+              display: "inline-block",
+            }}
+          >
+            {ecuacion}
+          </span>
+        </div>
+
+      )}
+
+      {/* Botones en su propio bloque */}
+      <section
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "10px",
+          marginTop: "20px",
+        }}
+      >
+        <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+        <label className="construir_arbols" style={{ cursor: "pointer" }}>
+          📂 Cargar archivo
+          <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+        </label>
         <button onClick={onBack} className="volver">⬅ Volver</button>
-      </div>
+      </section>
 
-      {/* Contenedor del árbol */}
-      <div className="arbol-grafico" style={{ overflow: "auto", background: "#fafafa" }}>
-        <svg width="2000" height="900">
-          {/* Líneas */}
-          {lineas.map((l, i) => (
-            <g key={i}>
-              <line
-                x1={l.x1}
-                y1={l.y1}
-                x2={l.x2}
-                y2={l.y2}
-                stroke="#777"
-                strokeWidth="2"
-              />
-              <text
-                x={(l.x1 + l.x2) / 2}
-                y={(l.y1 + l.y2) / 2 - 5}
-                textAnchor="middle"
-                fontSize="12"
-                fill="#333"
-              >
-                {l.label}
-              </text>
-            </g>
-          ))}
-
-          {/* Nodos */}
-          {nodos.map((n, i) => (
-            <g key={i}>
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r="18"
-                fill={n.letra ? "#ffd166" : "#cce3de"}
-                stroke="#555"
-                strokeWidth="2"
-              />
-              <text
-                x={n.x}
-                y={n.y + 5}
-                textAnchor="middle"
-                fontWeight="bold"
-                fontSize="13"
-              >
-                {n.letra ? n.letra : n.freq.toFixed(2)}
-              </text>
-            </g>
-          ))}
-        </svg>
-
-
-      </div>
-
-
-    </div>
-
+    </>
   );
-
 }

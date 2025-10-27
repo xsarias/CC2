@@ -25,7 +25,7 @@ function Busqueda({ onSelect }) {
             Búsquedas por Residuo
           </button>
           <button onClick={() => onSelect("multiples")} className="botones">
-            Búsquedas Múltiples
+            Búsquedas Por Residuo Múltiples
           </button>
           <button onClick={() => onSelect("huffman")} className="botones">
             Árboles de Huffman
@@ -48,7 +48,7 @@ function Busqueda({ onSelect }) {
         </div>
       </div>
 
-      <button onClick={() => onSelect("home")} style={{ marginTop: "20px" }}>
+      <button class="volver" onClick={() => onSelect("home")} style={{ marginTop: "20px" }}>
         ⬅ Volver
       </button>
     </div>
