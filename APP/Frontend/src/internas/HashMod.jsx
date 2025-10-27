@@ -7,13 +7,14 @@ import Colisiones from "./Colisiones";
 export default function HashMod({ onDataChange, onBack }) {
     const [tabla, setTabla] = useState(() => new Array(10).fill(null));
     const [clave, setClave] = useState("");
-    const [tamanoEstructura, setTamanoEstructura] = useState(10);
-    const [tamanoClave, setTamanoClave] = useState(2);
-    const [metodoColision, setMetodoColision] = useState("lineal");
+    const [tamanoEstructura, setTamanoEstructura] = useState();
+    const [tamanoClave, setTamanoClave] = useState();
+    const [metodoColision, setMetodoColision] = useState();
     const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
+    const [resaltadoTemporal, setResaltadoTemporal] = useState(null);
 
-    const ecuacionHash = `H(K) = K mod n → n = ${tamanoEstructura}`;
+    const ecuacionHash = `H(K) = (K mod n) + 1 → n = ${tamanoEstructura}`;
 
     // --- Actualiza tabla al cambiar tamaño ---
     useEffect(() => {
@@ -58,6 +59,8 @@ export default function HashMod({ onDataChange, onBack }) {
         setUltimoInsertado(indexFinal);
         setClave("");
         setResultadoBusqueda(`✅ Insertada ${claveNum} en índice ${indexFinal + 1}`);
+        setResaltadoTemporal({ index: indexFinal, valor: claveNum });
+        setTimeout(() => setResaltadoTemporal(null), 1200);
         setTimeout(() => setUltimoInsertado(null), 1400);
         if (onDataChange) onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
     };
@@ -72,6 +75,8 @@ export default function HashMod({ onDataChange, onBack }) {
         if (idx === -1) setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
         else {
             setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
+            setResaltadoTemporal({ index: idx, valor: claveNum });
+            setTimeout(() => setResaltadoTemporal(null), 1200);
             setUltimoInsertado(idx);
             setTimeout(() => setUltimoInsertado(null), 1000);
         }
@@ -182,9 +187,9 @@ export default function HashMod({ onDataChange, onBack }) {
         tabla.forEach((slot, i) => {
             if (slot != null) indices.add(i);
         });
-
+    
         const lista = Array.from(indices).sort((a, b) => a - b);
-
+    
         return (
             <table className="tabla-estructura">
                 <thead>
@@ -196,19 +201,96 @@ export default function HashMod({ onDataChange, onBack }) {
                 <tbody>
                     {lista.map((i) => {
                         const slot = tabla[i];
-                        let contenido = "";
-                        if (slot == null) contenido = "";
-                        else if (Array.isArray(slot)) contenido = slot.join(", ");
+                        let contenido = null;
+    
+                        // 🔹 Vacío
+                        if (slot == null) {
+                            contenido = "";
+                        }
+    
+                        // 🔹 Arreglos anidados (visual tipo [ 23, 45, 62 ])
+                        else if (Array.isArray(slot)) {
+                            contenido = (
+                                <div className="arreglo-celda">
+                                    <span className="corchete">[</span>
+                                    {slot.map((v, idxA) => {
+                                        const esResaltado =
+                                            resaltadoTemporal &&
+                                            resaltadoTemporal.index === i &&
+                                            resaltadoTemporal.valor === v;
+                                        return (
+                                            <React.Fragment key={idxA}>
+                                                <div
+                                                    className={`bloque-arreglo animar-bloque ${
+                                                        esResaltado ? "resaltado" : ""
+                                                    }`}
+                                                    style={{ animationDelay: `${idxA * 0.1}s` }}
+                                                >
+                                                    {v}
+                                                </div>
+                                                {idxA < slot.length - 1 && (
+                                                    <span className="coma">,</span>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    <span className="corchete">]</span>
+                                </div>
+                            );
+                        }
+    
+                        // 🔹 Encadenamiento (bloques → sin comas)
                         else if (slot && slot.valor !== undefined) {
-                            const vals = [];
+                            const nodos = [];
                             let n = slot;
                             while (n) {
-                                vals.push(n.valor);
+                                nodos.push(n.valor);
                                 n = n.next;
                             }
-                            contenido = vals.join(" → ");
-                        } else contenido = String(slot);
-
+                            contenido = (
+                                <div className="encadenamiento-celda">
+                                    {nodos.map((v, idxN) => {
+                                        const esResaltado =
+                                            resaltadoTemporal &&
+                                            resaltadoTemporal.index === i &&
+                                            resaltadoTemporal.valor === v;
+                                        return (
+                                            <div key={idxN} className="nodo-container">
+                                                <div
+                                                    className={`nodo animar-bloque ${
+                                                        esResaltado ? "resaltado" : ""
+                                                    }`}
+                                                    style={{ animationDelay: `${idxN * 0.1}s` }}
+                                                >
+                                                    {v}
+                                                </div>
+                                                {idxN < nodos.length - 1 && (
+                                                    <span className="flecha">→</span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }
+    
+                        // 🔹 Valor simple
+                        else {
+                            const esResaltado =
+                                resaltadoTemporal &&
+                                resaltadoTemporal.index === i &&
+                                resaltadoTemporal.valor === slot;
+                            contenido = (
+                                <div
+                                    className={`bloque-simple animar-bloque ${
+                                        esResaltado ? "resaltado" : ""
+                                    }`}
+                                >
+                                    {slot}
+                                </div>
+                            );
+                        }
+    
                         return (
                             <tr key={i} className={i === ultimoInsertado ? "nueva-fila" : ""}>
                                 <td>{i + 1}</td>
@@ -220,6 +302,9 @@ export default function HashMod({ onDataChange, onBack }) {
             </table>
         );
     };
+    
+
+
 
     return (
         <div className="contenedor">
