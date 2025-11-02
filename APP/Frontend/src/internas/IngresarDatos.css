@@ -39,7 +39,6 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: bold;
   color: white;
   transition: background 0.3s, transform 0.2s;
 }
@@ -51,24 +50,26 @@
 
 /* Colores específicos */
 .boton_agregar {
-  background-color: #22777a;
+  background-color:  #afd8df;
+  color: black;
 }
 .boton_agregar:hover {
-  background-color: #22777a;
+  background-color: #8ac5cf;
 }
 
 .boton {
-  background-color: #22777a;
+  background-color:  #afd8df;
+  color: black;
 }
 .boton:hover {
-  background-color: #1b5f61;
+  background-color:#8ac5cf;
 }
 
 .boton.eliminar {
-  background-color: #22777a;
+  background-color: #afd8df;
 }
 .boton.eliminar:hover {
-  background-color: #22777a;
+  background-color: #8ac5cf;
 }
 
 /* === TABLA DINÁMICA VERTICAL (base) === */

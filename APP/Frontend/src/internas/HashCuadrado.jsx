@@ -228,7 +228,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
 
     return (
         <div className="contenedor">
-            <h3>🧮 Método del Cuadrado Medio</h3>
+            <h3> Método del Cuadrado Medio</h3>
 
             <div className="ecuacion">{ecuacionHash}</div>
             <div className="opciones">
@@ -277,7 +277,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
                 />
                 <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
                 <button onClick={buscarClave} className="boton">🔍 Buscar</button>
-                <button onClick={borrarClave} className="boton eliminar">🗑 Eliminar</button>
+                <button onClick={borrarClave} className="boton eliminar">✖️ Eliminar</button>
                 <button onClick={vaciar} className="boton">♻ Vaciar</button>
             </div>
 
