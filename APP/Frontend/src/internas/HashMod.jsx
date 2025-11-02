@@ -59,7 +59,7 @@ export default function HashMod({ onDataChange, onBack }) {
         setUltimoInsertado(indexFinal);
         setClave("");
         setResultadoBusqueda(`✅ Insertada ${claveNum} en índice ${indexFinal + 1}`);
-        setResaltadoTemporal({ index: indexFinal, valor: claveNum });
+        setResaltadoTemporal({ index: indexFinal, valor: claveNum, tipo: "insertar" });
         setTimeout(() => setResaltadoTemporal(null), 1200);
         setTimeout(() => setUltimoInsertado(null), 1400);
         if (onDataChange) onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
@@ -75,8 +75,8 @@ export default function HashMod({ onDataChange, onBack }) {
         if (idx === -1) setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
         else {
             setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
-            setResaltadoTemporal({ index: idx, valor: claveNum });
-            setTimeout(() => setResaltadoTemporal(null), 1200);
+            setResaltadoTemporal({ index: idx, valor: claveNum, tipo: "buscar" });
+            setTimeout(() => setResaltadoTemporal(null), 1000);
             setUltimoInsertado(idx);
             setTimeout(() => setUltimoInsertado(null), 1000);
         }
@@ -88,15 +88,36 @@ export default function HashMod({ onDataChange, onBack }) {
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
 
         const claveNum = parseInt(clave, 10);
-        const tablaCopia = tabla.slice();
-        const ok = Colisiones.borrarClave(tablaCopia, claveNum);
-        if (!ok) return alert("La clave no existe");
 
-        setTabla(tablaCopia);
-        setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada`);
-        setClave("");
-        if (onDataChange) onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
+        // 1️⃣ Buscamos el índice de la clave antes de eliminarla
+        const idx = Colisiones.buscarClave(tabla, claveNum, metodoColision, tamanoEstructura);
+
+        if (idx === -1 || idx === null) {
+            return alert("La clave no existe");
+        }
+
+        // 2️⃣ Mostramos animación de eliminación
+        setResaltadoTemporal({ index: idx, valor: claveNum, tipo: "eliminar" });
+
+        // 3️⃣ Esperamos un poco antes de eliminar visualmente
+        setTimeout(() => {
+            const tablaCopia = tabla.slice();
+            const ok = Colisiones.borrarClave(tablaCopia, claveNum);
+
+            if (!ok) return alert("La clave no existe");
+
+            // 4️⃣ Actualizamos el estado tras la animación
+            setTabla(tablaCopia);
+            setResaltadoTemporal(null);
+            setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada`);
+            setClave("");
+
+            if (onDataChange) {
+                onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
+            }
+        }, 1000); // 600 ms = duración de la animación "fadeOutRed"
     };
+
 
     // --- Vaciar ---
     const vaciar = () => {
@@ -187,9 +208,9 @@ export default function HashMod({ onDataChange, onBack }) {
         tabla.forEach((slot, i) => {
             if (slot != null) indices.add(i);
         });
-    
+
         const lista = Array.from(indices).sort((a, b) => a - b);
-    
+
         return (
             <table className="tabla-estructura">
                 <thead>
@@ -202,12 +223,12 @@ export default function HashMod({ onDataChange, onBack }) {
                     {lista.map((i) => {
                         const slot = tabla[i];
                         let contenido = null;
-    
+
                         // 🔹 Vacío
                         if (slot == null) {
                             contenido = "";
                         }
-    
+
                         // 🔹 Arreglos anidados (visual tipo [ 23, 45, 62 ])
                         else if (Array.isArray(slot)) {
                             contenido = (
@@ -221,9 +242,14 @@ export default function HashMod({ onDataChange, onBack }) {
                                         return (
                                             <React.Fragment key={idxA}>
                                                 <div
-                                                    className={`bloque-arreglo animar-bloque ${
-                                                        esResaltado ? "resaltado" : ""
-                                                    }`}
+                                                    className={`bloque-arreglo ${esResaltado && resaltadoTemporal.tipo === "buscar"
+                                                            ? "resaltado-busqueda"
+                                                            : esResaltado && resaltadoTemporal.tipo === "eliminar"
+                                                                ? "resaltado-eliminar"
+                                                                : esResaltado
+                                                                    ? "bloque-aparecer resaltado-insercion"
+                                                                    : ""
+                                                        }`}
                                                     style={{ animationDelay: `${idxA * 0.1}s` }}
                                                 >
                                                     {v}
@@ -238,7 +264,7 @@ export default function HashMod({ onDataChange, onBack }) {
                                 </div>
                             );
                         }
-    
+
                         // 🔹 Encadenamiento (bloques → sin comas)
                         else if (slot && slot.valor !== undefined) {
                             const nodos = [];
@@ -257,9 +283,14 @@ export default function HashMod({ onDataChange, onBack }) {
                                         return (
                                             <div key={idxN} className="nodo-container">
                                                 <div
-                                                    className={`nodo animar-bloque ${
-                                                        esResaltado ? "resaltado" : ""
-                                                    }`}
+                                                    className={`nodo ${esResaltado
+                                                            ? resaltadoTemporal.tipo === "buscar"
+                                                                ? "resaltado-busqueda"
+                                                                : resaltadoTemporal.tipo === "eliminar"
+                                                                    ? "resaltado-eliminar"
+                                                                    : "bloque-aparecer resaltado-insercion"
+                                                            : ""
+                                                        }`}
                                                     style={{ animationDelay: `${idxN * 0.1}s` }}
                                                 >
                                                     {v}
@@ -273,7 +304,7 @@ export default function HashMod({ onDataChange, onBack }) {
                                 </div>
                             );
                         }
-    
+
                         // 🔹 Valor simple
                         else {
                             const esResaltado =
@@ -282,15 +313,20 @@ export default function HashMod({ onDataChange, onBack }) {
                                 resaltadoTemporal.valor === slot;
                             contenido = (
                                 <div
-                                    className={`bloque-simple animar-bloque ${
-                                        esResaltado ? "resaltado" : ""
-                                    }`}
+                                    className={`bloque-simple ${esResaltado
+                                        ? resaltadoTemporal.tipo === "buscar"
+                                            ? "resaltado-busqueda"
+                                            : resaltadoTemporal.tipo === "eliminar"
+                                                ? "resaltado-eliminar"
+                                                : "bloque-aparecer resaltado-insercion"
+                                        : ""
+                                        }`}
                                 >
                                     {slot}
                                 </div>
                             );
                         }
-    
+
                         return (
                             <tr key={i} className={i === ultimoInsertado ? "nueva-fila" : ""}>
                                 <td>{i + 1}</td>
@@ -302,7 +338,7 @@ export default function HashMod({ onDataChange, onBack }) {
             </table>
         );
     };
-    
+
 
 
 
