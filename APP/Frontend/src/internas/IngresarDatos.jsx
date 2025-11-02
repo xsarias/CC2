@@ -112,7 +112,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
 
   return (
     <div className="contenedor">
-      <h3>📥 Ingresar Datos</h3>
+      <h3>Ingresar Datos</h3>
 
       {/* Configuración */}
       <div style={{ marginBottom: "10px" }}>
@@ -149,7 +149,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
         />
         <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
         <button onClick={buscarClave} className="boton">🔎 Buscar</button>
-        <button onClick={eliminarClave} className="boton eliminar">🗑️ Eliminar</button>
+        <button onClick={eliminarClave} className="boton eliminar">✖️ Eliminar</button>
       </div>
 
       <p>{`Claves agregadas: ${array.length} / ${tamanoEstructura}`}</p>

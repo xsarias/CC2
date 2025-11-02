@@ -14,29 +14,29 @@ function Hash({ onBack }) {
 
     return (
         <div className="contenedor">
-            <h2>🔎 Búsquedas Hash</h2>
+            <h2>Búsquedas Hash</h2>
 
             {!opcion && (
                 <div>
                     <p>Selecciona una función hash:</p>
 
                     <button onClick={() => setOpcion("mod")} className="botones">
-                        ➗ Función MOD
+                        Función MOD
                     </button>
                     <br></br>
                     <br></br>
                     <button onClick={() => setOpcion("cuadrado")} className="botones">
-                        🟦 Función del Cuadrado
+                        Función del Cuadrado
                     </button>
                     <br></br>
                     <br></br>
                     <button onClick={() => setOpcion("truncamiento")} className="botones">
-                        ✂️ Función de Truncamiento
+                        Función de Truncamiento
                     </button>
                     <br></br>
                     <br></br>
                     <button onClick={() => setOpcion("plegamiento")} className="botones">
-                        📐 Función de Plegamiento
+                        Función de Plegamiento
                     </button>
                     <br></br>
                     <br></br>

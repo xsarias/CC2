@@ -1,7 +1,7 @@
 function Busqueda({ onSelect }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <h2>🔍 Selecciona tipo de búsqueda</h2>
+      <h2>Selecciona tipo de búsqueda</h2>
 
       <div style={{ marginBottom: "20px" }}>
         <h3>Internas</h3>
