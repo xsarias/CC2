@@ -94,8 +94,8 @@ function Binaria({ onBack }) {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <h2>📘 Búsqueda Binaria</h2>
-      <h3>🛠 Crear, buscar y eliminar en estructura</h3>
+      <h2>Búsqueda Binaria</h2>
+      <h3>Crear, buscar y eliminar en estructura</h3>
 
       {/* 👉 Pasamos lógica a IngresarDatos */}
       <IngresarDatos

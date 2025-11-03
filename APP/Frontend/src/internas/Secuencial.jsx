@@ -70,9 +70,7 @@ function Secuencial({ onBack }) {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <h2>📙 Búsqueda Secuencial</h2>
-      <h3>🛠 Crear, buscar y eliminar en estructura</h3>
-
+      <h2 class ="titles_h2">Búsqueda Secuencial</h2>
       <IngresarDatos
         onDataChange={actualizarDatos}
         onBuscar={manejarBuscar}

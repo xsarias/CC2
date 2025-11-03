@@ -133,3 +133,36 @@ body {
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   transition: background 0.3s;
 }
+.busqueda-contenedor {
+  text-align: center;
+  padding: 20px;
+  max-width: 700px;
+  margin: auto;
+  font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
+  color: white;
+}
+
+.panel {
+  background: #283038;
+  padding: 18px;
+  margin: 20px 0;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.25);
+}
+
+.panel h3 {
+  margin-bottom: 12px;
+  color:  #c3dab8; /* tu verde clarito */
+}
+
+.grupo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+
+
+
+
