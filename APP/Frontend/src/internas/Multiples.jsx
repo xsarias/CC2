@@ -66,7 +66,8 @@ export default function Multiples({ onBack }) {
     const [letras, setLetras] = useState([]);
     const [raiz, setRaiz] = useState(null);
     const [mensaje, setMensaje] = useState("");
-    const [letraResaltada, setLetraResaltada] = useState(null);
+    const [nodoResaltado, setNodoResaltado] = useState(null);
+
     const [buscando, setBuscando] = useState(false);
 
     const agregarLetra = () => {
@@ -92,26 +93,47 @@ export default function Multiples({ onBack }) {
 
     const buscarLetra = async () => {
         const letra = clave.toUpperCase();
-        if (!ALFABETO_AMER[letra]) return setMensaje(`❌ "${letra}" no está en el alfabeto AMER`);
-        if (!raiz) return setMensaje("⚠ Inserta al menos una letra primero");
-        setBuscando(true);
-        setMensaje(`🔍 Buscando "${letra}"...`);
-        setLetraResaltada(null);
+        const codigo = ALFABETO_AMER[letra];
 
-        const nodos = calcularPosiciones(raiz);
-        for (let n of nodos) {
-            setLetraResaltada(n.letra);
-            await new Promise(res => setTimeout(res, 200));
-            if (n.letra === letra) {
-                setMensaje(`✅ "${letra}" encontrada en código ${ALFABETO_AMER[letra]}`);
+        if (!codigo) return setMensaje(`❌ "${letra}" no está en el alfabeto AMER`);
+        if (!raiz) return setMensaje("⚠ Inserta al menos una letra primero");
+
+        setBuscando(true);
+        setMensaje(`🔍 Buscando "${letra}" por el camino: ${codigo}`);
+        setNodoResaltado(null);
+
+        let nodo = raiz;
+
+        for (let i = 0; i < codigo.length; i++) {
+
+            // Resaltar nodo actual
+            setNodoResaltado(nodo);
+            await new Promise(res => setTimeout(res, 600)); // velocidad visible
+
+            // Avanzar al siguiente nodo
+            if (codigo[i] === "0") nodo = nodo.izq;
+            else nodo = nodo.der;
+
+            if (!nodo) {
+                setMensaje(`❌ Camino roto. No existe el nodo para "${letra}"`);
                 setBuscando(false);
                 return;
             }
         }
-        setMensaje(`❌ "${letra}" no se encuentra`);
-        setLetraResaltada(null);
+
+        // Resaltar nodo final
+        setNodoResaltado(nodo);
+        await new Promise(res => setTimeout(res, 600));
+
+        if (nodo.letra === letra) {
+            setMensaje(`✅ "${letra}" encontrada correctamente 🎯`);
+        } else {
+            setMensaje(`⚠ Llegamos, pero la letra no coincide. Árbol incompleto`);
+        }
+
         setBuscando(false);
     };
+
 
     // 💾 Guardar en archivo JSON
     const guardarArchivo = () => {
@@ -171,7 +193,7 @@ export default function Multiples({ onBack }) {
         <>
             <div className="arbol-digitales-container">
                 <div className="sidebar">
-                    <h2>🌳 Búsqueda Múltiple</h2>
+                    <h2>Búsqueda Múltiple</h2>
                     <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
                         Digite una clave:
                     </label>
@@ -180,7 +202,7 @@ export default function Multiples({ onBack }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
                         <button onClick={agregarLetra} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
                         <button onClick={buscarLetra} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarLetraClick} className="construir_arbols" disabled={buscando}>🗑 Eliminar</button>
+                        <button onClick={eliminarLetraClick} className="construir_arbols" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -190,9 +212,9 @@ export default function Multiples({ onBack }) {
                         <tbody>{letras.map((l, i) => <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>)}</tbody>
                     </table>
 
-                    
 
-                    
+
+
                 </div>
 
                 <div className="arbol-grafico" style={{ overflow: "auto", height: "700px" }}>
@@ -204,8 +226,9 @@ export default function Multiples({ onBack }) {
                             </g>)}
                             {nodos.map((n, i) => <g key={i}>
                                 <circle cx={n.x} cy={n.y} r="15"
-                                    fill={n.letra === letraResaltada ? "#ff6666" : n.letra ? "#ffcb6b" : "#eee"}
-                                    stroke={n.letra === letraResaltada ? "#c0392b" : "#aaa"} strokeWidth="2" />
+                                    fill={n === nodoResaltado ? "#ff6666" : n.letra ? "#ffcb6b" : "#eee"}
+                                    stroke={n === nodoResaltado ? "#c0392b" : "#aaa"}
+                                />
                                 {n.letra && <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>}
                             </g>)}
                         </g>
@@ -213,20 +236,26 @@ export default function Multiples({ onBack }) {
                 </div>
             </div>
             {/* Botones fuera del árbol */}
-            <section
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "10px",
-                    marginTop: "20px"
-                }}
-            >
-                <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
-                <label className="construir_arbols" style={{ cursor: "pointer" }}>
-                    📂 Cargar archivo
-                    <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
-                </label>
-                <button onClick={onBack} className="volver">⬅ Volver</button>
+            <section className="botones-accion">
+                <button
+                    onClick={() => {
+                        const div = document.querySelector(".arbol-grafico");
+                        if (div.requestFullscreen) div.requestFullscreen();
+                        else if (div.webkitRequestFullscreen) div.webkitRequestFullscreen(); // Safari
+                    }}
+                    className="construir_arbols"
+                >
+                    ⛶ Expandir
+                </button>
+
+            
+                    <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+                    <label className="construir_arbols" style={{ cursor: "pointer" }}>
+                        📂 Cargar archivo
+                        <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+                    </label>
+                    <button onClick={onBack} className="volver">⬅ Volver</button>
+                
             </section>
         </>
     );

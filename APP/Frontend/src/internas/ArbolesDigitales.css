@@ -5,27 +5,59 @@
   padding: 20px;
   height: 100%;
   box-sizing: border-box;
+  font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 .sidebar {
-  width: 250px; /* ancho fijo */
+  width: 300px;
+  /* ancho fijo */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  align-items: center;
+  
 }
+
+
 
 .sidebar input {
   padding: 5px;
   font-size: 16px;
 }
 
+
 .sidebar table {
-  width: 100%;
+  width: 80%;
   border-collapse: collapse;
+  width: 100%;
+  text-align: center;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  background-color: #ffffff;
 }
 
-.sidebar th, .sidebar td {
+
+.sidebar table th {
+  background-color: #c3dab8;
+  color: rgb(0, 0, 0);
+  padding: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.sidebar table td {
+  border: 1.5px solid #999;
+  padding: 10px;
+  font-weight: bold;
+  font-size: 15px;
+  transition: all 0.25s ease;
+  color: black;
+}
+
+.sidebar th,
+.sidebar td {
   border: 1px solid #aaa;
   padding: 4px 6px;
   text-align: center;
@@ -35,18 +67,112 @@
   background-color: #227174;
 }
 
-.volver {
-  margin-top: 10px;
-  padding: 5px 10px;
+.modal-arbol {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* importante */
 }
 
+.modal-contenido {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  max-width: 95%;
+  max-height: 95%;
+  overflow: auto;
+  position: relative;
+}
+
+.cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: #d66;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+}
+/* Hace que el árbol tenga scroll en vez de empujar todo */
+.scroll-arbol {
+  width: 900px;
+  height: 500px;
+  overflow: auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Evita que la tabla de claves empuje todo hacia abajo */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Mantiene los botones SIEMPRE abajo y centrados */
+.botones-accion {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background:transparent;
+  padding: 12px 0;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.tabla-frecuencias{
+  width: 50%;
+  font-size: small;
+}
+
+.zoom-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  justify-content: center; /* CENTRA el SVG */
+  align-items: center;
+  background: #f8f8f8;
+  padding: 20px;
+}
+
+/* Para evitar nodos apretados */
+.zoom-container svg {
+  margin-left: 150px; /* mueve el árbol al centro visual */
+}
+
+
+.zoom-container:active {
+  cursor: grabbing;
+}
+
+
 .arbol-grafico {
-  flex: 1; /* ocupa todo el espacio restante */
-  overflow: auto; /* scroll si el árbol es grande */
+  flex: 1;
+  /* ocupa todo el espacio restante */
+  overflow: auto;
+  /* scroll si el árbol es grande */
   border: 1px solid #ccc;
   background-color: #fefefe;
   padding: 10px;
-  height: 600px; /* altura fija para no desbordar la página */
+  height: 600px;
+  position: relative;
+  /* altura fija para no desbordar la página */
+}
+.arbol-grafico svg {
+  min-width: 1200px; /* más grande que el contenedor */
 }
 
 .titulo-arbol {
@@ -55,27 +181,51 @@
   margin-bottom: 10px;
 }
 
-.construir_arbols{
-    margin-right: 10px;
-  background-color:  #10494b;   
-  color: white;               /* texto blanco */
-  padding: 10px 18px;          /* espacio interno */
-  border: none;                /* sin borde duro */
-  border-radius: 8px;          /* esquinas redondeadas */
+.sidebar select,
+.sidebar input[type="number"],
+.sidebar input[type="text"] {
+  padding: 6px 8px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 0.9rem;
+  color: black;
+}
+
+
+.construir_arbols {
+  margin-right: 10px;
+  background-color: #afd8df;
+  color: black;
+  /* texto blanco */
+  padding: 10px 18px;
+  /* espacio interno */
+  border: none;
+  /* sin borde duro */
+  border-radius: 8px;
+  /* esquinas redondeadas */
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* sombra sutil */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  /* sombra sutil */
   transition: all 0.3s ease;
 }
+
 .construir_arbols:hover {
-  background-color: #156d70;   /* tono más claro o distinto */
-  transform: scale(1.05);      /* (opcional) efecto de “crecer” un poco */
+  background-color: #8ac5cf;
+  /* un poco más oscuro al pasar */
+  transform: translateY(-2px);
+  /* pequeño efecto de elevación */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+  /* (opcional) efecto de “crecer” un poco */
+}
+.construir_arbols button{
+  height: 10pxs;
 }
 
-
-.volver{
-    padding: 5px 10px;
+.volver {
+  padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
   background-color: #afd8df;
@@ -84,4 +234,12 @@
   border-radius: 6px;
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   transition: background 0.3s;
+}
+
+.volver:hover {
+  background-color: #8ac5cf;
+  /* un poco más oscuro al pasar */
+  transform: translateY(-2px);
+  /* pequeño efecto de elevación */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
 }

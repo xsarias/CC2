@@ -55,15 +55,23 @@ function insertarPorResiduo(nodo, letra, codigo, i = 0) {
 
 function calcularPosiciones(nodo, depth = 0, x = 500, offset = 200) {
     if (!nodo) return [];
-    nodo.y = depth * 80 + 40;
+
+    nodo.y = depth * 90 + 40; // más separación vertical
     nodo.x = x;
+
     const posiciones = [nodo];
+
+    // 👇 Le ponemos un límite mínimo para que no se junten tanto
+    const nuevoOffset = Math.max(offset / 1.4, 60); // antes era offset/2
+
     if (nodo.izq)
-        posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - offset, offset / 2));
+        posiciones.push(...calcularPosiciones(nodo.izq, depth + 1, x - nuevoOffset, nuevoOffset));
     if (nodo.der)
-        posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + offset, offset / 2));
+        posiciones.push(...calcularPosiciones(nodo.der, depth + 1, x + nuevoOffset, nuevoOffset));
+
     return posiciones;
 }
+
 
 function PorResiduo({ onBack }) {
     const [clave, setClave] = useState("");
@@ -202,101 +210,105 @@ function PorResiduo({ onBack }) {
 
     return (
         <>
-        <div className="arbol-digitales-container">
-            <div className="sidebar">
-                <h2>🌳 Árbol por Residuo</h2>
+            <div className="arbol-digitales-container">
+                <div className="sidebar">
+                    <h2>Árbol por Residuo</h2>
 
-                <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
-                    Digite una clave:
-                </label>
-                <input
-                    id="claveInput"
-                    type="text"
-                    maxLength={1}
-                    value={clave}
-                    onChange={e => setClave(e.target.value.toUpperCase())}
-                />
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                    <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Insertar</button>
-                    <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                    <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>🗑️ Eliminar</button>
+                    <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
+                        Digite una clave:
+                    </label>
+                    <input
+                        id="claveInput"
+                        type="text"
+                        maxLength={1}
+                        value={clave}
+                        onChange={e => setClave(e.target.value.toUpperCase())}
+                    />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
+                        <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Insertar</button>
+                        <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>✖️ Eliminar</button>
+                    </div>
+
+                    {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
+
+                    <table>
+                        <thead><tr><th>Clave</th><th>Código</th></tr></thead>
+                        <tbody>
+                            {claves.map((l, i) => (
+                                <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+
                 </div>
 
-                {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
-
-                <table>
-                    <thead><tr><th>Clave</th><th>Código</th></tr></thead>
-                    <tbody>
-                        {claves.map((l, i) => (
-                            <tr key={i}><td>{l}</td><td>{ALFABETO_AMER[l]}</td></tr>
+                <div className="arbol-grafico">
+                    <svg width="2000" height="700">
+                        {lineas.map((l, i) => (
+                            <g key={i}>
+                                <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
+                                <text
+                                    x={(l.x1 + l.x2) / 2}
+                                    y={(l.y1 + l.y2) / 2 - 5}
+                                    textAnchor="middle"
+                                    fontSize="12"
+                                    fill="#333"
+                                >
+                                    {l.label}
+                                </text>
+                            </g>
                         ))}
-                    </tbody>
-                </table>
-
-                
+                        {nodos.map((n, i) => (
+                            <g key={i}>
+                                {n.letra
+                                    ? (
+                                        <rect
+                                            x={n.x - 20}
+                                            y={n.y - 20}
+                                            width="40"
+                                            height="40"
+                                            fill={n === nodoResaltado ? "#ff6666" : "#6bb8ff"}
+                                            stroke={n === nodoResaltado ? "#c0392b" : "#2980b9"}
+                                            strokeWidth="2"
+                                            rx="5"
+                                        />
+                                    )
+                                    : (
+                                        <circle
+                                            cx={n.x} cy={n.y} r="20"
+                                            fill={n === nodoResaltado ? "#ff9999" : "#ffcb6b"}
+                                            stroke={n === nodoResaltado ? "#c0392b" : "#e67e22"}
+                                            strokeWidth="2"
+                                        />
+                                    )
+                                }
+                                {n.letra && (
+                                    <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>
+                                )}
+                            </g>
+                        ))}
+                    </svg>
+                </div>
             </div>
+            {/* Botones debajo del árbol */}
+            <section className="botones-accion">
+                <button
+                    onClick={() => {
+                        const div = document.querySelector(".arbol-grafico");
+                        if (div.requestFullscreen) div.requestFullscreen();
+                    }}
+                    className="construir_arbols"
+                >
+                    ⛶ Expandir
+                </button>
 
-            <div className="arbol-grafico">
-                <svg width="2000" height="700">
-                    {lineas.map((l, i) => (
-                        <g key={i}>
-                            <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
-                            <text
-                                x={(l.x1 + l.x2) / 2}
-                                y={(l.y1 + l.y2) / 2 - 5}
-                                textAnchor="middle"
-                                fontSize="12"
-                                fill="#333"
-                            >
-                                {l.label}
-                            </text>
-                        </g>
-                    ))}
-                    {nodos.map((n, i) => (
-                        <g key={i}>
-                            {n.letra
-                                ? (
-                                    <rect
-                                        x={n.x - 20}
-                                        y={n.y - 20}
-                                        width="40"
-                                        height="40"
-                                        fill={n === nodoResaltado ? "#ff6666" : "#6bb8ff"}
-                                        stroke={n === nodoResaltado ? "#c0392b" : "#2980b9"}
-                                        strokeWidth="2"
-                                        rx="5"
-                                    />
-                                )
-                                : (
-                                    <circle
-                                        cx={n.x} cy={n.y} r="20"
-                                        fill={n === nodoResaltado ? "#ff9999" : "#ffcb6b"}
-                                        stroke={n === nodoResaltado ? "#c0392b" : "#e67e22"}
-                                        strokeWidth="2"
-                                    />
-                                )
-                            }
-                            {n.letra && (
-                                <text x={n.x} y={n.y + 5} textAnchor="middle" fontWeight="bold">{n.letra}</text>
-                            )}
-                        </g>
-                    ))}
-                </svg>
-            </div>
-        </div>
-        {/* Botones debajo del árbol */}
-            <section
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "10px",
-                    marginTop: "20px"
-                }}
-            >
                 <button onClick={guardarArbol} className="construir_arbols">💾 Guardar</button>
                 <button onClick={cargarArbol} className="construir_arbols">📂 Cargar</button>
                 <button onClick={onBack} className="volver">⬅ Volver</button>
             </section>
+
         </>
     );
 }

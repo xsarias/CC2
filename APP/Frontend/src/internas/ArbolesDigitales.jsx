@@ -44,6 +44,7 @@ function ArbolesDigitales({ onBack }) {
     const [mensaje, setMensaje] = useState("");
     const [letraResaltada, setLetraResaltada] = useState(null);
     const [buscando, setBuscando] = useState(false);
+    const [expandido, setExpandido] = useState(false);
 
     const construirArbol = (arrayClaves) => {
         let r = null;
@@ -173,7 +174,7 @@ function ArbolesDigitales({ onBack }) {
         <>
             <div className="arbol-digitales-container" style={{ display: "flex", gap: "20px" }}>
                 <div className="sidebar">
-                    <h2>🌳 Árboles Digitales</h2>
+                    <h2>Árboles Digitales</h2>
                     <label htmlFor="claveInput" style={{ marginBottom: "5px", fontWeight: "bold" }}>
                         Digite una clave:
                     </label>
@@ -187,7 +188,7 @@ function ArbolesDigitales({ onBack }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
                         <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Añadir</button>
                         <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>🗑️ Eliminar</button>
+                        <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -201,11 +202,12 @@ function ArbolesDigitales({ onBack }) {
                         </tbody>
                     </table>
 
-                    
+
                 </div>
 
                 <div className="arbol-grafico">
-                    <svg width="1000" height="500">
+                    <svg width="800" height="900">
+
                         {lineas.map((l, i) => (
                             <g key={i}>
                                 <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
@@ -234,23 +236,74 @@ function ArbolesDigitales({ onBack }) {
                     </svg>
                 </div>
             </div>
+            {expandido && (
+                <div className="modal-arbol" onClick={() => setExpandido(false)}>
+                    <div className="modal-contenido" onClick={e => e.stopPropagation()}>
+                        <button className="cerrar" onClick={() => setExpandido(false)}>✖</button>
+
+                        <div className="zoom-container">
+                            <svg
+                                viewBox="0 0 2000 1500"
+                                style={{ width: "2000px", height: "1500px", alignContent: "center" }}
+                            >
+                                {lineas.map((l, i) => (
+                                    <g key={i}>
+                                        <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#555" strokeWidth="2" />
+                                        <text
+                                            x={(l.x1 + l.x2) / 2}
+                                            y={(l.y1 + l.y2) / 2 - 5}
+                                            textAnchor="middle"
+                                            fontSize="14"
+                                            fill="#000"
+                                        >
+                                            {l.label}
+                                        </text>
+                                    </g>
+                                ))}
+
+                                {nodos.map((n, i) => (
+                                    <g key={i}>
+                                        <circle
+                                            cx={n.x} cy={n.y} r="30"
+                                            fill="#ffcb6b"
+                                            stroke="#e67e22"
+                                            strokeWidth="3"
+                                        />
+                                        <text
+                                            x={n.x}
+                                            y={n.y + 6}
+                                            textAnchor="middle"
+                                            fontWeight="bold"
+                                            fontSize="18"
+                                        >
+                                            {n.letra}
+                                        </text>
+                                    </g>
+                                ))}
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
 
             {/* Botones fuera del árbol */}
-            <section
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "10px",
-                    marginTop: "20px"
-                }}
-            >
+            <section className="botones-accion">
+                <button className="construir_arbols" onClick={() => setExpandido(true)}>
+                    ⛶ Expandir
+                </button>
+
                 <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
+
                 <label className="construir_arbols" style={{ cursor: "pointer" }}>
                     📂 Cargar archivo
                     <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
                 </label>
+
                 <button onClick={onBack} className="volver">⬅ Volver</button>
             </section>
+
         </>
     );
 }
