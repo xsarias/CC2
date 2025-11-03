@@ -256,29 +256,29 @@ export default function Huffman({ onBack }) {
                 <h4>Códigos de Huffman</h4>
 
 
-                  <table className="tabla-frecuencias">
-                    <thead>
-                      <tr>
-                        <th>Clave</th>
-                        <th>Frecuencia</th>
-                        <th>Código</th>
+                <table className="tabla-frecuencias">
+                  <thead>
+                    <tr>
+                      <th>Clave</th>
+                      <th>Frecuencia</th>
+                      <th>Código</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {Object.entries(codigos).map(([letra, codigo], i) => (
+                      <tr key={i}>
+                        <td>{letra}</td>
+
+                        {/* Frecuencia → ya es probabilidad, solo formateamos */}
+                        <td>{frecuencias[letra].toFixed(3).replace(".", ",")}</td>
+
+                        <td style={{ fontFamily: "monospace" }}>{codigo}</td>
                       </tr>
-                    </thead>
+                    ))}
+                  </tbody>
+                </table>
 
-                    <tbody>
-                      {Object.entries(codigos).map(([letra, codigo], i) => (
-                        <tr key={i}>
-                          <td>{letra}</td>
-
-                          {/* Frecuencia → ya es probabilidad, solo formateamos */}
-                          <td>{frecuencias[letra].toFixed(3).replace(".", ",")}</td>
-
-                          <td style={{ fontFamily: "monospace" }}>{codigo}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                
               </>
             )}
           </div>
@@ -305,6 +305,7 @@ export default function Huffman({ onBack }) {
             ))}
 
             {/* Nodos */}
+            {/* Nodos */}
             {nodos.map((n, i) => (
               <g key={i}>
                 <circle
@@ -313,21 +314,35 @@ export default function Huffman({ onBack }) {
                   r="18"
                   fill={resaltado === n ? "#ff6666" : n.letra ? "#ffd166" : "#cce3de"}
                   stroke={resaltado === n ? "#c0392b" : "#555"}
-
-
                   strokeWidth="2"
                 />
+
+                {/* ✅ Letra dentro (solo si es hoja) */}
+                {n.letra && (
+                  <text
+                    x={n.x}
+                    y={n.y + 5}
+                    textAnchor="middle"
+                    fontWeight="bold"
+                    fontSize="13"
+                  >
+                    {n.letra}
+                  </text>
+                )}
+
+                {/* ✅ Frecuencia al lado derecho */}
                 <text
-                  x={n.x}
+                  x={n.x + 28}  // desplazar a la derecha
                   y={n.y + 5}
-                  textAnchor="middle"
-                  fontWeight="bold"
-                  fontSize="13"
+                  textAnchor="start"
+                  fontSize="12"
+                  fill="#333"
                 >
-                  {n.letra ? n.letra : n.freq.toFixed(2)}
+                  {n.freq.toFixed(3).replace(".", ",")}
                 </text>
               </g>
             ))}
+
           </svg>
         </div>
       </div>
