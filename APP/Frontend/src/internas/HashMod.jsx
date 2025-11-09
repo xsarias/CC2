@@ -7,12 +7,13 @@ import Colisiones from "./Colisiones";
 export default function HashMod({ onDataChange, onBack }) {
     const [tabla, setTabla] = useState(() => new Array(10).fill(null));
     const [clave, setClave] = useState("");
-    const [tamanoEstructura, setTamanoEstructura] = useState();
-    const [tamanoClave, setTamanoClave] = useState();
-    const [metodoColision, setMetodoColision] = useState();
+    const [tamanoEstructura, setTamanoEstructura] = useState("");
+    const [tamanoClave, setTamanoClave] = useState("");
+    const [metodoColision, setMetodoColision] = useState("");
     const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
     const [resaltadoTemporal, setResaltadoTemporal] = useState(null);
+    const [configBloqueada, setConfigBloqueada] = useState(false);
 
     const ecuacionHash = `H(K) = (K mod n) + 1 → n = ${tamanoEstructura}`;
 
@@ -54,7 +55,7 @@ export default function HashMod({ onDataChange, onBack }) {
         if (["lineal", "cuadratica", "doblehash"].includes(metodoColision)) {
             tablaCopia[indexFinal] = claveNum;
         }
-
+        setConfigBloqueada(true);
         setTabla(tablaCopia);
         setUltimoInsertado(indexFinal);
         setClave("");
@@ -71,60 +72,188 @@ export default function HashMod({ onDataChange, onBack }) {
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
 
         const claveNum = parseInt(clave, 10);
+
         const idx = Colisiones.buscarClave(tabla, claveNum, metodoColision, tamanoEstructura);
-        if (idx === -1) setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
-        else {
-            setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
-            setResaltadoTemporal({ index: idx, valor: claveNum, tipo: "buscar" });
-            setTimeout(() => setResaltadoTemporal(null), 1000);
-            setUltimoInsertado(idx);
-            setTimeout(() => setUltimoInsertado(null), 1000);
+
+        if (idx === -1) {
+            setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
+            return;
         }
+
+        const slot = tabla[idx];
+
+        // 🔹 Si es encadenamiento o arreglo anidado, hacemos animación progresiva
+        if (metodoColision === "encadenamiento" || metodoColision === "arreglos") {
+            let valores = [];
+
+            if (Array.isArray(slot)) valores = slot;
+            else if (slot && slot.valor !== undefined) {
+                let n = slot;
+                while (n) {
+                    valores.push(n.valor);
+                    n = n.next;
+                }
+            }
+
+            let i = 0;
+
+            const animarBusqueda = () => {
+                if (i >= valores.length) {
+                    setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
+                    setResaltadoTemporal(null);
+                    return;
+                }
+
+                const valorActual = valores[i];
+
+                // 🔸 Resaltar cada paso como "buscando"
+                setResaltadoTemporal({ index: idx, valor: valorActual, tipo: "buscando" });
+
+                // Si encontramos la clave, resaltar con color especial "encontrado"
+                if (valorActual === claveNum) {
+                    setTimeout(() => {
+                        setResaltadoTemporal({ index: idx, valor: valorActual, tipo: "encontrado" });
+                        setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
+                        setTimeout(() => setResaltadoTemporal(null), 1200);
+                    }, 400);
+                    return;
+                }
+
+                // Si no, continuar con el siguiente
+                i++;
+                setTimeout(animarBusqueda, 600);
+            };
+
+            animarBusqueda();
+            return;
+        }
+
+        // 🔹 Caso normal
+        setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
+        setResaltadoTemporal({ index: idx, valor: claveNum, tipo: "encontrado" });
+        setTimeout(() => setResaltadoTemporal(null), 1000);
+        setUltimoInsertado(idx);
+        setTimeout(() => setUltimoInsertado(null), 1000);
     };
+
+
 
     // --- Eliminar ---
     const borrarClave = () => {
         if (!clave) return alert("Ingresa una clave para eliminar.");
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
-
+    
         const claveNum = parseInt(clave, 10);
-
-        // 1️⃣ Buscamos el índice de la clave antes de eliminarla
+    
+        // 🔹 Buscamos índice base según hash
         const idx = Colisiones.buscarClave(tabla, claveNum, metodoColision, tamanoEstructura);
-
+    
         if (idx === -1 || idx === null) {
             return alert("La clave no existe");
         }
-
-        // 2️⃣ Mostramos animación de eliminación
+    
+        const slot = tabla[idx];
+    
+        // 🔹 Si es encadenamiento o arreglos anidados, hacemos recorrido visual
+        if (metodoColision === "encadenamiento" || metodoColision === "arreglos") {
+            let valores = [];
+    
+            if (Array.isArray(slot)) valores = slot;
+            else if (slot && slot.valor !== undefined) {
+                let n = slot;
+                while (n) {
+                    valores.push(n.valor);
+                    n = n.next;
+                }
+            }
+    
+            let i = 0;
+    
+            const animarEliminacion = () => {
+                if (i >= valores.length) {
+                    setResultadoBusqueda(`❌ La clave ${claveNum} no se encontró para eliminar`);
+                    setResaltadoTemporal(null);
+                    return;
+                }
+    
+                const valorActual = valores[i];
+                setResaltadoTemporal({ index: idx, valor: valorActual, tipo: "buscando" });
+    
+                // 🔸 Si encontramos la clave, resaltamos con "eliminar" y borramos
+                if (valorActual === claveNum) {
+                    setTimeout(() => {
+                        setResaltadoTemporal({ index: idx, valor: valorActual, tipo: "eliminar" });
+    
+                        setTimeout(() => {
+                            const tablaCopia = tabla.slice();
+                            const ok = Colisiones.borrarClave(tablaCopia, claveNum);
+    
+                            if (!ok) return alert("La clave no existe");
+    
+                            setTabla(tablaCopia);
+                            setResaltadoTemporal(null);
+                            setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada`);
+                            setClave("");
+    
+                            if (onDataChange) {
+                                onDataChange(tablaCopia, {
+                                    tamanoClave,
+                                    tamanoEstructura,
+                                    metodoColision,
+                                });
+                            }
+                        }, 800); // duración del color de eliminación
+                    }, 400);
+                    return;
+                }
+    
+                i++;
+                setTimeout(animarEliminacion, 600);
+            };
+    
+            animarEliminacion();
+            return;
+        }
+    
+        // 🔹 Caso normal (sin estructura compuesta)
         setResaltadoTemporal({ index: idx, valor: claveNum, tipo: "eliminar" });
-
-        // 3️⃣ Esperamos un poco antes de eliminar visualmente
+    
         setTimeout(() => {
             const tablaCopia = tabla.slice();
             const ok = Colisiones.borrarClave(tablaCopia, claveNum);
-
             if (!ok) return alert("La clave no existe");
-
-            // 4️⃣ Actualizamos el estado tras la animación
+    
             setTabla(tablaCopia);
             setResaltadoTemporal(null);
             setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada`);
             setClave("");
-
+    
             if (onDataChange) {
                 onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
             }
-        }, 1000); // 600 ms = duración de la animación "fadeOutRed"
+        }, 1000);
     };
+    
 
 
     // --- Vaciar ---
     const vaciar = () => {
-        setTabla(new Array(Number(tamanoEstructura || 10)).fill(null));
+        setTabla(new Array(10).fill(null));
         setResultadoBusqueda("Tabla vaciada");
         setClave("");
+        setUltimoInsertado(null);
+        setResaltadoTemporal(null);
+
+        // 🔹 Reinicia configuración
+        setTamanoEstructura("");
+        setTamanoClave("");
+        setMetodoColision("");
+
+        // 🔹 Desbloquea para una nueva configuración
+        setConfigBloqueada(false);
     };
+
+
 
     // --- Guardar / Cargar ---
     const guardarArchivo = () => {
@@ -242,13 +371,15 @@ export default function HashMod({ onDataChange, onBack }) {
                                         return (
                                             <React.Fragment key={idxA}>
                                                 <div
-                                                    className={`bloque-arreglo ${esResaltado && resaltadoTemporal.tipo === "buscar"
-                                                            ? "resaltado-busqueda"
-                                                            : esResaltado && resaltadoTemporal.tipo === "eliminar"
-                                                                ? "resaltado-eliminar"
-                                                                : esResaltado
-                                                                    ? "bloque-aparecer resaltado-insercion"
-                                                                    : ""
+                                                    className={`bloque-arreglo ${esResaltado
+                                                        ? resaltadoTemporal.tipo === "buscando"
+                                                            ? "resaltado-buscando"
+                                                            : resaltadoTemporal.tipo === "encontrado"
+                                                                ? "resaltado-encontrado"
+                                                                : resaltadoTemporal.tipo === "eliminar"
+                                                                    ? "resaltado-eliminar"
+                                                                    : "bloque-aparecer resaltado-insercion"
+                                                        : ""
                                                         }`}
                                                     style={{ animationDelay: `${idxA * 0.1}s` }}
                                                 >
@@ -284,12 +415,14 @@ export default function HashMod({ onDataChange, onBack }) {
                                             <div key={idxN} className="nodo-container">
                                                 <div
                                                     className={`nodo ${esResaltado
-                                                            ? resaltadoTemporal.tipo === "buscar"
-                                                                ? "resaltado-busqueda"
+                                                        ? resaltadoTemporal.tipo === "buscando"
+                                                            ? "resaltado-buscando"
+                                                            : resaltadoTemporal.tipo === "encontrado"
+                                                                ? "resaltado-encontrado"
                                                                 : resaltadoTemporal.tipo === "eliminar"
                                                                     ? "resaltado-eliminar"
                                                                     : "bloque-aparecer resaltado-insercion"
-                                                            : ""
+                                                        : ""
                                                         }`}
                                                     style={{ animationDelay: `${idxN * 0.1}s` }}
                                                 >
@@ -314,11 +447,13 @@ export default function HashMod({ onDataChange, onBack }) {
                             contenido = (
                                 <div
                                     className={`bloque-simple ${esResaltado
-                                        ? resaltadoTemporal.tipo === "buscar"
-                                            ? "resaltado-busqueda"
-                                            : resaltadoTemporal.tipo === "eliminar"
-                                                ? "resaltado-eliminar"
-                                                : "bloque-aparecer resaltado-insercion"
+                                        ? resaltadoTemporal.tipo === "buscando"
+                                            ? "resaltado-buscando"
+                                            : resaltadoTemporal.tipo === "encontrado"
+                                                ? "resaltado-encontrado"
+                                                : resaltadoTemporal.tipo === "eliminar"
+                                                    ? "resaltado-eliminar"
+                                                    : "bloque-aparecer resaltado-insercion"
                                         : ""
                                         }`}
                                 >
@@ -353,7 +488,9 @@ export default function HashMod({ onDataChange, onBack }) {
                     <select
                         value={metodoColision}
                         onChange={(e) => setMetodoColision(e.target.value)}
+                        disabled={configBloqueada}
                     >
+                        <option value="" disabled>Selecciona un método</option>
                         <option value="lineal">Lineal</option>
                         <option value="cuadratica">Cuadrática</option>
                         <option value="doblehash">Doble hash</option>
@@ -369,6 +506,7 @@ export default function HashMod({ onDataChange, onBack }) {
                         min="2"
                         value={tamanoEstructura}
                         onChange={(e) => setTamanoEstructura(Number(e.target.value))}
+                        disabled={configBloqueada}
                     />
                 </div>
 
@@ -379,6 +517,7 @@ export default function HashMod({ onDataChange, onBack }) {
                         min="1"
                         value={tamanoClave}
                         onChange={(e) => setTamanoClave(Number(e.target.value))}
+                        disabled={configBloqueada}
                     />
                 </div>
             </div>
