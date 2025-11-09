@@ -6,13 +6,16 @@ import Colisiones from "./Colisiones";
 export default function HashCuadrado({ onDataChange, onBack }) {
     const [tabla, setTabla] = useState(() => new Array(10).fill(null));
     const [clave, setClave] = useState("");
-    const [tamanoEstructura, setTamanoEstructura] = useState(10);
-    const [tamanoClave, setTamanoClave] = useState(2);
-    const [metodoColision, setMetodoColision] = useState("lineal");
+    const [tamanoEstructura, setTamanoEstructura] = useState();
+    const [tamanoClave, setTamanoClave] = useState();
+    const [metodoColision, setMetodoColision] = useState();
     const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
+    const [resaltadoTemporal, setResaltadoTemporal] = useState(null);
+    const [configBloqueada, setConfigBloqueada] = useState(false);
+    const [recorrido, setRecorrido] = useState([]);
 
-    const ecuacionHash = `H(K) = dígitos centrales (K²) mod n → n = ${tamanoEstructura}`;
+    const ecuacionHash = `H(K) = (dígitos centrales (K²) + 1)  n → n = ${tamanoEstructura}`;
 
     // --- Actualiza tabla al cambiar tamaño ---
     useEffect(() => {
@@ -28,10 +31,19 @@ export default function HashCuadrado({ onDataChange, onBack }) {
     const hashCuadrado = (num) => {
         const cuadrado = num * num;
         const str = cuadrado.toString();
+      
+        // Convertimos el número a string y determinamos cuántos dígitos extraer (según tamaño clave)
+        const numDigitos = tamanoClave; // <-- este valor viene del input de usuario
         const mitad = Math.floor(str.length / 2);
-        const extraido = parseInt(str.substring(mitad - 1, mitad + 1), 10) || cuadrado;
+      
+        // Extraemos los dígitos centrales según la longitud de clave deseada
+        const inicio = Math.max(0, mitad - Math.floor(numDigitos / 2));
+        const fin = inicio + numDigitos;
+      
+        const extraido = parseInt(str.substring(inicio, fin), 10) || num;
         return extraido % tamanoEstructura;
-    };
+      };
+
 
     const validarDigitos = (valor) => {
         const s = String(valor);
@@ -41,69 +53,150 @@ export default function HashCuadrado({ onDataChange, onBack }) {
 
     // --- Insertar ---
     const agregarClave = () => {
-        if (!clave) return alert("Ingresa una clave");
-        if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
+        // Validaciones iniciales
+        if (!tamanoEstructura || !tamanoClave || !metodoColision)
+            return alert("⚙️ Primero configura el tamaño, los dígitos y el método de colisión.");
+        if (!clave) return alert("Ingresa una clave.");
+        if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica.");
         if (!validarDigitos(clave))
             return alert(`La clave debe tener exactamente ${tamanoClave} dígitos (sin contar ceros a la izquierda).`);
 
         const claveNum = parseInt(clave, 10);
+
+        // Calcular índice base con seguridad
         const indexBase = hashCuadrado(claveNum);
+        if (isNaN(indexBase) || indexBase < 0)
+            return alert("Error al calcular el índice hash. Verifica la configuración.");
 
-        if (Colisiones.claveExiste(tabla, claveNum)) return alert(`La clave ${claveNum} ya existe.`);
+        // Evitar duplicados
+        if (Colisiones.claveExiste(tabla, claveNum))
+            return alert(`La clave ${claveNum} ya existe.`);
 
+        // Crear copia y resolver colisión
         const tablaCopia = tabla.slice();
         const indexFinal = Colisiones.resolver(tablaCopia, indexBase, claveNum, metodoColision, tamanoEstructura);
 
-        if (indexFinal === null) return alert("No se pudo insertar: tabla llena o no hay posición libre con ese método.");
+        if (indexFinal === null)
+            return alert("❌ No se pudo insertar: tabla llena o sin espacio con ese método.");
 
+        // Si es direccionamiento abierto, insertar directamente
         if (["lineal", "cuadratica", "doblehash"].includes(metodoColision)) {
             tablaCopia[indexFinal] = claveNum;
         }
 
+        // Bloquear configuración al insertar por primera vez
+        if (!configBloqueada) setConfigBloqueada(true);
+
+        // Actualizar estado visual
         setTabla(tablaCopia);
+        console.log("🔍 Tabla actual:", tablaCopia); // 👈 DEBUG: muestra si se insertó correctamente
         setUltimoInsertado(indexFinal);
         setClave("");
         setResultadoBusqueda(`✅ Insertada ${claveNum} en índice ${indexFinal + 1}`);
-        setTimeout(() => setUltimoInsertado(null), 1400);
-        if (onDataChange) onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
-    };
+        setResaltadoTemporal({ index: indexFinal, valor: claveNum, tipo: "insertar" });
 
+        // Animaciones visuales temporales
+        setTimeout(() => setResaltadoTemporal(null), 1200);
+        setTimeout(() => setUltimoInsertado(null), 1400);
+
+        // Notificar cambios externos
+        if (onDataChange)
+            onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
+    };
     // --- Buscar ---
-    const buscarClave = () => {
+    const buscarClave = async () => {
         if (!clave) return alert("Ingresa una clave para buscar.");
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
-
+    
         const claveNum = parseInt(clave, 10);
-        const idx = Colisiones.buscarClave(tabla, claveNum, metodoColision, tamanoEstructura);
-        if (idx === -1) setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
-        else {
-            setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${idx + 1}`);
-            setUltimoInsertado(idx);
-            setTimeout(() => setUltimoInsertado(null), 1000);
+        const indexBase = hashCuadrado(claveNum);
+    
+        const resultado = Colisiones.buscarClave(
+            tabla,
+            claveNum,
+            metodoColision,
+            tamanoEstructura,
+            true,
+            indexBase
+        );
+        const { encontrado, indice, pasos } = resultado;
+    
+        // Recorrido visual paso a paso
+        setRecorrido(pasos);
+    
+        for (let paso of pasos) {
+            const index = typeof paso === "object" ? paso.index : paso;
+            const valor = typeof paso === "object" ? paso.valor : null;
+    
+            setResaltadoTemporal({ index, valor, tipo: "buscar" }); // 🔸 Amarillo
+            await new Promise((r) => setTimeout(r, 500));
+        }
+    
+        setResaltadoTemporal(null);
+        setRecorrido([]);
+    
+        // Resultado final
+        if (encontrado) {
+            setResultadoBusqueda(`✅ La clave ${claveNum} se encontró en índice ${indice + 1}`);
+            setResaltadoTemporal({ index: indice, valor: claveNum, tipo: "encontrado" }); // 💚 Verde
+            setTimeout(() => setResaltadoTemporal(null), 1200);
+        } else {
+            setResultadoBusqueda(`❌ La clave ${claveNum} NO se encontró`);
         }
     };
+    
+
+
 
     // --- Eliminar ---
-    const borrarClave = () => {
+    const borrarClave = async () => {
         if (!clave) return alert("Ingresa una clave para eliminar.");
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica");
-
+    
         const claveNum = parseInt(clave, 10);
-        const tablaCopia = tabla.slice();
-        const ok = Colisiones.borrarClave(tablaCopia, claveNum);
-        if (!ok) return alert("La clave no existe");
-
-        setTabla(tablaCopia);
-        setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada`);
-        setClave("");
-        if (onDataChange) onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
+        const indexBase = hashCuadrado(claveNum);
+        const resultado = Colisiones.buscarClave(tabla, claveNum, metodoColision, tamanoEstructura, true, indexBase);
+    
+        const { encontrado, indice, pasos } = resultado;
+        if (!encontrado) return alert("La clave no existe");
+    
+        // 🔸 Recorrido visual (amarillo)
+        setRecorrido(pasos);
+        for (let paso of pasos) {
+            const index = typeof paso === "object" ? paso.index : paso;
+            const valor = typeof paso === "object" ? paso.valor : null;
+    
+            setResaltadoTemporal({ index, valor, tipo: "buscar" });
+            await new Promise((r) => setTimeout(r, 500));
+        }
+    
+        // 💥 Resalta en rojo antes de borrar
+        setResaltadoTemporal({ index: indice, valor: claveNum, tipo: "eliminar" });
+    
+        setTimeout(() => {
+            const tablaCopia = tabla.slice();
+            const ok = Colisiones.borrarClave(tablaCopia, claveNum);
+            if (!ok) return alert("Error al eliminar");
+    
+            setTabla(tablaCopia);
+            setResaltadoTemporal(null);
+            setResultadoBusqueda(`🗑 Clave ${claveNum} eliminada del índice ${indice + 1}`);
+            setClave("");
+            if (onDataChange)
+                onDataChange(tablaCopia, { tamanoClave, tamanoEstructura, metodoColision });
+        }, 1000);
     };
+    
 
     // --- Vaciar ---
     const vaciar = () => {
         setTabla(new Array(Number(tamanoEstructura || 10)).fill(null));
         setResultadoBusqueda("Tabla vaciada");
         setClave("");
+        setConfigBloqueada(false);
+        setMetodoColision("");
+        setTamanoClave("");
+        setTamanoEstructura("");
     };
 
     // --- Guardar / Cargar ---
@@ -201,18 +294,100 @@ export default function HashCuadrado({ onDataChange, onBack }) {
                 <tbody>
                     {lista.map((i) => {
                         const slot = tabla[i];
-                        let contenido = "";
-                        if (slot == null) contenido = "";
-                        else if (Array.isArray(slot)) contenido = slot.join(", ");
-                        else if (slot && slot.valor !== undefined) {
-                            const vals = [];
+                        let contenido = null;
+
+                        if (slot == null) {
+                            contenido = "";
+                        } else if (Array.isArray(slot)) {
+                            contenido = (
+                                <div className="arreglo-celda">
+                                    <span className="corchete">[</span>
+                                    {slot.map((v, idxA) => {
+                                        const esResaltado =
+                                            resaltadoTemporal &&
+                                            resaltadoTemporal.index === i &&
+                                            resaltadoTemporal.valor === v;
+                                        return (
+                                            <React.Fragment key={idxA}>
+                                                <div
+                                                    className={`bloque-arreglo ${esResaltado
+                                                        ? resaltadoTemporal.tipo === "buscar"
+                                                            ? "resaltado-buscando"
+                                                            : resaltadoTemporal.tipo === "encontrado"
+                                                                ? "resaltado-encontrado"
+                                                                : resaltadoTemporal.tipo === "eliminar"
+                                                                    ? "resaltado-eliminar"
+                                                                    : "bloque-aparecer resaltado-insercion"
+                                                        : ""
+                                                        }`}
+                                                >
+                                                    {v}
+                                                </div>
+                                                {idxA < slot.length - 1 && <span className="coma">,</span>}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    <span className="corchete">]</span>
+                                </div>
+                            );
+                        } else if (slot && slot.valor !== undefined) {
+                            const nodos = [];
                             let n = slot;
                             while (n) {
-                                vals.push(n.valor);
+                                nodos.push(n.valor);
                                 n = n.next;
                             }
-                            contenido = vals.join(" → ");
-                        } else contenido = String(slot);
+                            contenido = (
+                                <div className="encadenamiento-celda">
+                                    {nodos.map((v, idxN) => {
+                                        const esResaltado =
+                                            resaltadoTemporal &&
+                                            resaltadoTemporal.index === i &&
+                                            resaltadoTemporal.valor === v;
+                                        return (
+                                            <div key={idxN} className="nodo-container">
+                                                <div
+                                                    className={`nodo ${esResaltado
+                                                        ? resaltadoTemporal.tipo === "buscar"
+                                                            ? "resaltado-buscando"
+                                                            : resaltadoTemporal.tipo === "encontrado"
+                                                                ? "resaltado-encontrado"
+                                                                : resaltadoTemporal.tipo === "eliminar"
+                                                                    ? "resaltado-eliminar"
+                                                                    : "bloque-aparecer resaltado-insercion"
+                                                        : ""
+                                                        }`}
+                                                >
+                                                    {v}
+                                                </div>
+                                                {idxN < nodos.length - 1 && <span className="flecha">→</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        } else {
+                            const esResaltado =
+                                resaltadoTemporal &&
+                                resaltadoTemporal.index === i &&
+                                resaltadoTemporal.valor === slot;
+                            contenido = (
+                                <div
+                                    className={`bloque-simple ${esResaltado
+                                        ? resaltadoTemporal.tipo === "buscar"
+                                            ? "resaltado-buscando"
+                                            : resaltadoTemporal.tipo === "encontrado"
+                                                ? "resaltado-encontrado"
+                                                : resaltadoTemporal.tipo === "eliminar"
+                                                    ? "resaltado-eliminar"
+                                                    : "bloque-aparecer resaltado-insercion"
+                                        : ""
+                                        }`}
+                                >
+                                    {slot}
+                                </div>
+                            );
+                        }
 
                         return (
                             <tr key={i} className={i === ultimoInsertado ? "nueva-fila" : ""}>
@@ -226,6 +401,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
         );
     };
 
+
     return (
         <div className="contenedor">
             <h3> Método del Cuadrado Medio</h3>
@@ -237,7 +413,9 @@ export default function HashCuadrado({ onDataChange, onBack }) {
                     <select
                         value={metodoColision}
                         onChange={(e) => setMetodoColision(e.target.value)}
+                        disabled={configBloqueada}
                     >
+                        <option value="">Seleccione un método</option>
                         <option value="lineal">Lineal</option>
                         <option value="cuadratica">Cuadrática</option>
                         <option value="doblehash">Doble hash</option>
@@ -253,6 +431,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
                         min="2"
                         value={tamanoEstructura}
                         onChange={(e) => setTamanoEstructura(Number(e.target.value))}
+                        disabled={configBloqueada}
                     />
                 </div>
 
@@ -263,6 +442,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
                         min="1"
                         value={tamanoClave}
                         onChange={(e) => setTamanoClave(Number(e.target.value))}
+                        disabled={configBloqueada}
                     />
                 </div>
             </div>

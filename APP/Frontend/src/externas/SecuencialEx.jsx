@@ -5,8 +5,8 @@ import "../internas/IngresarDatos.css";
 export default function SecuencialEx({ onDataChange, onBack }) {
     const [registros, setRegistros] = useState([]);
     const [clave, setClave] = useState("");
-    const [tamano, setTamano] = useState(16);
-    const [tamanoClave, setTamanoClave] = useState(4);
+    const [tamano, setTamano] = useState();
+    const [tamanoClave, setTamanoClave] = useState();
     const [bloques, setBloques] = useState([]);
     const [resultado, setResultado] = useState("");
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
