@@ -403,7 +403,7 @@ export default function HashCuadrado({ onDataChange, onBack }) {
 
 
     return (
-        <div className="contenedor">
+        <div>
             <h3> Método del Cuadrado Medio</h3>
 
             <div className="ecuacion">{ecuacionHash}</div>

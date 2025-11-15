@@ -28,7 +28,7 @@ function Busqueda({ onSelect }) {
       </div>
 
       {/* Volver */}
-      <button className="volver" onClick={() => onSelect("home")}>
+      <button className="botones" onClick={() => onSelect("home")}>
         ⬅ Volver
       </button>
     </div>

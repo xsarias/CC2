@@ -119,7 +119,7 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
   ];
 
   return (
-    <div className="contenedor">
+    <div className="contenedor-ingresar">
       <h3>Ingresar Datos</h3>
 
       {/* Configuración igual al estilo HashCuadrado */}

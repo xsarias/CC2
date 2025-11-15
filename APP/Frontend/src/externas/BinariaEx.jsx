@@ -315,7 +315,7 @@ export default function BinariaEx({ onDataChange, onBack }) {
 
 
     return (
-        <div className="contenedor">
+        <div className="contenedor-hash">
             <h3>Búsqueda Binaria Externa</h3>
 
             <div className="opciones">

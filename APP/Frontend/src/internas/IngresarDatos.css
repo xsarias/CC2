@@ -1,5 +1,5 @@
 /* === CONTENEDOR PRINCIPAL === */
-.contenedor {
+.contenedor-ingresar {
   text-align: center;
   margin-bottom: 20px;
   max-width: 700px;
@@ -7,8 +7,12 @@
   margin-right: auto;
   padding: 15px;
   font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
+  background-color: #e7f0ee ;
+  color: #283b42;
+  border-radius: 15px;                   /* bordes redondeados */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* sombra elegante */
+  max-width: 7000px;  
 }
-
 /* === INPUTS === */
 .input-chico {
   width: 150px;
@@ -39,10 +43,12 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  color: white;
+  color: #283b42;
   transition: background 0.3s, transform 0.2s;
 }
-
+.titles_h2{
+  color: #283b42;
+}
 .boton:hover,
 .boton_agregar:hover {
   transform: scale(1.05);
@@ -50,26 +56,26 @@
 
 /* Colores específicos */
 .boton_agregar {
-  background-color:  #afd8df;
-  color: black;
+  background-color:  #1d6a96;
+  color: white;
 }
 .boton_agregar:hover {
-  background-color: #8ac5cf;
+  background-color: #85b8cb;
 }
 
 .boton {
-  background-color:  #afd8df;
-  color: black;
+  background-color: #1d6a96;
+  color: white;
 }
 .boton:hover {
-  background-color:#8ac5cf;
+  background-color:#85b8cb;;
 }
 
 .boton.eliminar {
-  background-color: #afd8df;
+  background-color: #1d6a96;;
 }
 .boton.eliminar:hover {
-  background-color: #8ac5cf;
+  background-color: #85b8cb;
 }
 
 /* === TABLA DINÁMICA VERTICAL (base) === */
@@ -85,7 +91,7 @@
 }
 
 .tabla-estructura th {
-  background-color: #c3dab8;
+  background-color: #85b8cb;
   color: rgb(0, 0, 0);
   padding: 10px;
   font-size: 12px;
@@ -181,7 +187,7 @@
     padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-  background-color: #75379b;
+  background-color: #1d6a96;
   color: white;
   border: none;
   border-radius: 6px;
@@ -274,7 +280,7 @@
 
 
 .panel-controles {
-  color: white;
+  color: #283b42;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -303,7 +309,7 @@
 
 .opciones label,
 .panel-controles label {
-  color: #fff;
+  color: #283b42;
 }
 
 .bloques-container {

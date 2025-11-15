@@ -225,9 +225,9 @@ function PorResiduo({ onBack }) {
                         onChange={e => setClave(e.target.value.toUpperCase())}
                     />
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                        <button onClick={agregarClave} className="construir_arbols" disabled={buscando}>➕ Insertar</button>
-                        <button onClick={buscarEnArbol} className="construir_arbols" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarClave} className="construir_arbols" disabled={buscando}>✖️ Eliminar</button>
+                        <button onClick={agregarClave}  className="botones" disabled={buscando}>➕ Insertar</button>
+                        <button onClick={buscarEnArbol} className="botones" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarClave} className="botones" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -299,14 +299,14 @@ function PorResiduo({ onBack }) {
                         const div = document.querySelector(".arbol-grafico");
                         if (div.requestFullscreen) div.requestFullscreen();
                     }}
-                    className="construir_arbols"
+                    className="botones"
                 >
                     ⛶ Expandir
                 </button>
 
-                <button onClick={guardarArbol} className="construir_arbols">💾 Guardar</button>
-                <button onClick={cargarArbol} className="construir_arbols">📂 Cargar</button>
-                <button onClick={onBack} className="volver">⬅ Volver</button>
+                <button onClick={guardarArbol} className="botones">💾 Guardar</button>
+                <button onClick={cargarArbol} className="botones">📂 Cargar</button>
+                <button onClick={onBack} className="botones">⬅ Volver</button>
             </section>
 
         </>

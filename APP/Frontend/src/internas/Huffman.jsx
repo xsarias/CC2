@@ -215,7 +215,7 @@ export default function Huffman({ onBack }) {
           />
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-            <button onClick={generarArbol} className="construir_arbols">⚙️ Generar árbol</button>
+            <button onClick={generarArbol} className="botones">⚙️ Generar árbol</button>
 
           </div>
           <input
@@ -226,11 +226,11 @@ export default function Huffman({ onBack }) {
             placeholder="Clave a buscar"
           />
 
-          <button onClick={buscarLetra} className="construir_arbols" disabled={buscando}>
+          <button onClick={buscarLetra} className="botones" disabled={buscando}>
             🔎 Buscar
           </button>
           <button
-            className="construir_arbols"
+            className="botones"
             onClick={() => {
               const letra = letraBuscada.toUpperCase();
               if (!frecuencias[letra]) {
@@ -375,17 +375,17 @@ export default function Huffman({ onBack }) {
             if (div.requestFullscreen) div.requestFullscreen();
             else if (div.webkitRequestFullscreen) div.webkitRequestFullscreen();
           }}
-          className="construir_arbols"
+          className="botones"
         >
           ⛶ Expandir
         </button>
 
-        <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
-        <label className="construir_arbols" style={{ cursor: "pointer" }}>
+        <button onClick={guardarArchivo} className="botones">💾 Guardar archivo</button>
+        <label className="botones" style={{ cursor: "pointer" }}>
           📂 Cargar archivo
           <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
         </label>
-        <button onClick={onBack} className="volver">⬅ Volver</button>
+        <button onClick={onBack} className="botones">⬅ Volver</button>
       </section>
 
     </>

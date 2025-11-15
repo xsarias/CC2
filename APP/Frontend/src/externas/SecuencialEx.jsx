@@ -244,8 +244,8 @@ export default function SecuencialEx({ onDataChange, onBack }) {
 
 
     return (
-        <div className="contenedor">
-            <h3>Búsqueda Binaria Externa</h3>
+        <div className="contenedor-hash">
+            <h3>Búsqueda Secuencial Externa</h3>
 
             <div className="opciones">
                 <div className="campo">

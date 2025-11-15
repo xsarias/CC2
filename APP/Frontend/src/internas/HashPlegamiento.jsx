@@ -403,7 +403,7 @@ export default function HashPlegamiento({ onDataChange, onBack }) {
   };
 
   return (
-    <div className="contenedor">
+    <div>
       <h3>Función de Plegamiento</h3>
       <div className="ecuacion">{ecuacionHash}</div>
 

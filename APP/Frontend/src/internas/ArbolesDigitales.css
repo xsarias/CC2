@@ -6,6 +6,7 @@
   height: 100%;
   box-sizing: border-box;
   font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
+  color: #283b42;
 }
 
 .sidebar {
@@ -40,7 +41,7 @@
 
 
 .sidebar table th {
-  background-color: #c3dab8;
+  background-color: #85b8cb;
   color: rgb(0, 0, 0);
   padding: 10px;
   font-size: 12px;

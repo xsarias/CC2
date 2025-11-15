@@ -86,7 +86,7 @@ function Secuencial({ onBack }) {
         onClick={onBack}
         style={{ marginTop: "10px" }}
         disabled={buscando}
-        className="volver"
+        className="botones"
       >
         ⬅ Volver
       </button>
