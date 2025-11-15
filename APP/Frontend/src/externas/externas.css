@@ -1,7 +1,7 @@
 .contenedor-secuencial {
   padding: 20px;
   text-align: center;
-  color: #222;
+  color: white;
 }
 
 .opciones {
@@ -61,4 +61,31 @@
 
 .panel-archivos {
   margin-top: 15px;
+}
+.tabla-estructura {
+  border-collapse: collapse;
+  margin: 25px auto;
+  width: 60%;
+  text-align: center;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  background-color: #ffffff;
+}
+
+.tabla-estructura th {
+  background-color: #c3dab8;
+  color: rgb(0, 0, 0);
+  padding: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.tabla-estructura td {
+  border: 1.5px solid #999;
+  padding: 10px;
+  font-weight: bold;
+  font-size: 15px;
+  transition: all 0.25s ease;
+  color: black;
 }

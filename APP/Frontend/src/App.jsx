@@ -15,6 +15,7 @@ import "./internas/PorResiduo";
 import "./internas/Huffman";
 import SecuencialEx from "./externas/SecuencialEx";
 import BinariaEx from "./externas/BinariaEx";
+import HashExpansiones from "./externas/HashExpansiones"
 
 function App() {
   const [message, setMessage] = useState("Cargando...");
@@ -56,6 +57,7 @@ function App() {
 
       {tab == "SecuencialEx" && <SecuencialEx onBack={() => setTab("busqueda")} />}
       {tab == "BinariaEx" && <BinariaEx onBack={() => setTab("busqueda")} />}
+      {tab == "HashExpansiones" && <HashExpansiones onBack={() => setTab("busqueda")} />}
 
 
       {/* Grafos */}

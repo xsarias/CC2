@@ -537,3 +537,29 @@ select:disabled {
   transform: scale(1.1);
 }
 
+.tabla-cubetas {
+  border-collapse: collapse;
+  margin: 15px auto;
+  min-width: 350px;
+  text-align: center;
+}
+.tabla-cubetas th,
+.tabla-cubetas td {
+  border: 1px solid #777;
+  padding: 8px;
+  width: 50px;
+  height: 35px;
+}
+.tabla-cubetas td.ocupado {
+  background-color: #48c774;
+  color: white;
+  font-weight: bold;
+}
+.tabla-cubetas td.libre {
+  background-color: #f0f0f0;
+  color: #444;
+}
+.estado-cubetas {
+  margin-top: 10px;
+  text-align: center;
+}

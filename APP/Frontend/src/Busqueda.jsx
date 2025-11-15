@@ -33,18 +33,14 @@ function Busqueda({ onSelect }) {
         </div>
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
-        <h3>Externas</h3>
-        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-          <button onClick={() => onSelect("SecuencialEx")} className="botones">
-            Secuencial
-          </button>
-          <button onClick={() => onSelect("BinariaEx")} className="botones">
-            Binaria
-          </button>
-          <button onClick={() => onSelect("HashEx")} className="botones">
-            Hash
-          </button>
+      {/* EXTERNAS */}
+      <div className="panel">
+        <h3>Búsquedas Externas</h3>
+        <div className="grupo-botones">
+          <button onClick={() => onSelect("SecuencialEx")} className="botones">Secuencial</button>
+          <button onClick={() => onSelect("BinariaEx")} className="botones">Binaria</button>
+          <button onClick={() => onSelect("HashEx")} className="botones">Hash</button>
+          <button onClick={() => onSelect("HashExpansiones")} className="botones">Expanciones</button>
         </div>
       </div>
 
