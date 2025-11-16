@@ -98,6 +98,38 @@ export default function Huffman({ onBack }) {
   const [ecuacion, setEcuacion] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [codigos, setCodigos] = useState({});
+  const [letraBuscada, setLetraBuscada] = useState("");
+  const [resaltado, setResaltado] = useState(null);
+  const [buscando, setBuscando] = useState(false);
+
+  const buscarLetra = async () => {
+    const letra = letraBuscada.toUpperCase();
+
+    if (!codigos[letra]) {
+      setMensaje(`❌ "${letra}" no existe en el árbol`);
+      return;
+    }
+
+    setBuscando(true);
+    setMensaje(`🔍 Buscando "${letra}"...`);
+    setResaltado(null);
+
+    const nodosOrden = [...nodos]; // ✅ ahora sí usamos nodos calculados
+
+    for (let n of nodosOrden) {
+      setResaltado(n);
+      await new Promise(res => setTimeout(res, 200));
+      if (n.letra === letra) {
+        setMensaje(`✅ Encontrada: "${letra}" con código ${codigos[letra]}`);
+        setBuscando(false);
+        return;
+      }
+    }
+
+    setMensaje(`❌ No encontrada`);
+    setBuscando(false);
+  };
+
 
   // Generar árbol desde el texto
   const generarArbol = () => {
@@ -172,9 +204,8 @@ export default function Huffman({ onBack }) {
     <>
       <div className="arbol-digitales-container">
         <div className="sidebar">
-          <h2>🌳 Árbol de Huffman</h2>
-          <p>Inserte una palabra</p>
-
+          <h2>Árbol de Huffman</h2>
+          <p>Inserte un mensaje:</p>
           <input
             type="text"
             value={texto}
@@ -184,35 +215,74 @@ export default function Huffman({ onBack }) {
           />
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-            <button onClick={generarArbol} className="construir_arbols">⚙️ Generar árbol</button>
+            <button onClick={generarArbol} className="botones">⚙️ Generar árbol</button>
 
           </div>
+          <input
+            type="text"
+            value={letraBuscada}
+            onChange={(e) => setLetraBuscada(e.target.value.toUpperCase())}
+            maxLength={1}
+            placeholder="Clave a buscar"
+          />
+
+          <button onClick={buscarLetra} className="botones" disabled={buscando}>
+            🔎 Buscar
+          </button>
+          <button
+            className="botones"
+            onClick={() => {
+              const letra = letraBuscada.toUpperCase();
+              if (!frecuencias[letra]) {
+                setMensaje(`❌ "${letra}" no está en el árbol`);
+                return;
+              }
+              const freqs = { ...frecuencias };
+              delete freqs[letra];
+              const nuevaRaiz = construirArbol(freqs);
+              setFrecuencias(freqs);
+              setCodigos(generarCodigos(nuevaRaiz));
+              setRaiz(nuevaRaiz);
+              setMensaje(`🗑 "${letra}" eliminada`);
+            }}
+          >
+            ✖️ Eliminar
+          </button>
 
 
-          {/* Tabla de códigos Huffman */}
-          {Object.keys(codigos).length > 0 && (
-            <>
-              <h4>Códigos de Huffman</h4>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Clave</th>
-                    <th>Frecuencia</th>
-                    <th>Código</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(codigos).map(([letra, codigo], i) => (
-                    <tr key={i}>
-                      <td>{letra}</td>
-                      <td>{frecuencias[letra]?.toFixed(2)}</td>
-                      <td style={{ fontFamily: "monospace" }}>{codigo}</td>
+          <div>
+            {Object.keys(codigos).length > 0 && (
+              <>
+                <h4>Códigos de Huffman</h4>
+
+
+                <table className="tabla-frecuencias">
+                  <thead>
+                    <tr>
+                      <th>Clave</th>
+                      <th>Frecuencia</th>
+                      <th>Código</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
+                  </thead>
+
+                  <tbody>
+                    {Object.entries(codigos).map(([letra, codigo], i) => (
+                      <tr key={i}>
+                        <td>{letra}</td>
+
+                        {/* Frecuencia → ya es probabilidad, solo formateamos */}
+                        <td>{frecuencias[letra].toFixed(3).replace(".", ",")}</td>
+
+                        <td style={{ fontFamily: "monospace" }}>{codigo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+              </>
+            )}
+          </div>
+
         </div>
 
         {/* SVG del árbol */}
@@ -235,27 +305,44 @@ export default function Huffman({ onBack }) {
             ))}
 
             {/* Nodos */}
+            {/* Nodos */}
             {nodos.map((n, i) => (
               <g key={i}>
                 <circle
                   cx={n.x}
                   cy={n.y}
                   r="18"
-                  fill={n.letra ? "#ffd166" : "#cce3de"}
-                  stroke="#555"
+                  fill={resaltado === n ? "#ff6666" : n.letra ? "#ffd166" : "#cce3de"}
+                  stroke={resaltado === n ? "#c0392b" : "#555"}
                   strokeWidth="2"
                 />
+
+                {/* ✅ Letra dentro (solo si es hoja) */}
+                {n.letra && (
+                  <text
+                    x={n.x}
+                    y={n.y + 5}
+                    textAnchor="middle"
+                    fontWeight="bold"
+                    fontSize="13"
+                  >
+                    {n.letra}
+                  </text>
+                )}
+
+                {/* ✅ Frecuencia al lado derecho */}
                 <text
-                  x={n.x}
+                  x={n.x + 28}  // desplazar a la derecha
                   y={n.y + 5}
-                  textAnchor="middle"
-                  fontWeight="bold"
-                  fontSize="13"
+                  textAnchor="start"
+                  fontSize="12"
+                  fill="#333"
                 >
-                  {n.letra ? n.letra : n.freq.toFixed(2)}
+                  {n.freq.toFixed(3).replace(".", ",")}
                 </text>
               </g>
             ))}
+
           </svg>
         </div>
       </div>
@@ -281,20 +368,24 @@ export default function Huffman({ onBack }) {
       )}
 
       {/* Botones en su propio bloque */}
-      <section
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "10px",
-          marginTop: "20px",
-        }}
-      >
-        <button onClick={guardarArchivo} className="construir_arbols">💾 Guardar archivo</button>
-        <label className="construir_arbols" style={{ cursor: "pointer" }}>
+      <section className="botones-accion">
+        <button
+          onClick={() => {
+            const div = document.querySelector(".arbol-grafico");
+            if (div.requestFullscreen) div.requestFullscreen();
+            else if (div.webkitRequestFullscreen) div.webkitRequestFullscreen();
+          }}
+          className="botones"
+        >
+          ⛶ Expandir
+        </button>
+
+        <button onClick={guardarArchivo} className="botones">💾 Guardar archivo</button>
+        <label className="botones" style={{ cursor: "pointer" }}>
           📂 Cargar archivo
           <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
         </label>
-        <button onClick={onBack} className="volver">⬅ Volver</button>
+        <button onClick={onBack} className="botones">⬅ Volver</button>
       </section>
 
     </>

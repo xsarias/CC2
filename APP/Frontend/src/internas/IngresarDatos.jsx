@@ -45,6 +45,14 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
     if (!clave) return;
     onBuscar(clave, array);
   };
+  const vaciar = () => {
+    setArray([]);
+    setClave("");
+    onDataChange([], { tamanoClave, tamanoEstructura });
+  };
+
+
+
 
   // ✅ Guardar archivo JSON
   const guardarArchivo = () => {
@@ -111,50 +119,54 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
   ];
 
   return (
-    <div className="contenedor">
+    <div className="contenedor-ingresar">
       <h3>Ingresar Datos</h3>
 
-      {/* Configuración */}
-      <div style={{ marginBottom: "10px" }}>
-        <label>
-          Tamaño estructura:
+      {/* Configuración igual al estilo HashCuadrado */}
+      <div className="opciones" >
+        <div className="campo">
+          <label>Tamaño estructura:</label>
           <input
             type="number"
             value={tamanoEstructura}
             onChange={(e) => setTamanoEstructura(parseInt(e.target.value))}
             min={array.length}
-            className="input-chico"
           />
-        </label>
-        <label>
-          Tamaño clave:
+        </div>
+
+        <div className="campo">
+          <label>Tamaño clave (dígitos):</label>
           <input
             type="number"
             value={tamanoClave}
             onChange={(e) => setTamanoClave(parseInt(e.target.value))}
             min="1"
-            className="input-chico"
           />
-        </label>
+        </div>
+
+        <div className="campo">
+          <label>Clave:</label>
+          <input
+            type="text"
+            value={clave}
+            onChange={handleChange}
+            placeholder={`(${tamanoClave} dígitos)`}
+          />
+        </div>
       </div>
 
-      {/* Input + botones */}
-      <div className="acciones">
-        <input
-          type="text"
-          value={clave}
-          onChange={handleChange}
-          placeholder={`Clave (${tamanoClave} dígitos)`}
-          className="input-clave"
-        />
+      {/* Input + botones, mismo estilo que panel-controles */}
+      <div className="panel-controles">
+
         <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
         <button onClick={buscarClave} className="boton">🔎 Buscar</button>
         <button onClick={eliminarClave} className="boton eliminar">✖️ Eliminar</button>
+        <button onClick={vaciar} className="boton">♻ Vaciar</button>
       </div>
 
       <p>{`Claves agregadas: ${array.length} / ${tamanoEstructura}`}</p>
 
-      {/* 🧱 Tabla vertical dinámica */}
+      {/* Tabla */}
       <table className="tabla-estructura">
         <thead>
           <tr>
@@ -178,15 +190,16 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
       </table>
 
       {/* Guardar / Cargar archivo */}
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={guardarArchivo} className="boton">💾 Guardar archivo</button>
-        <label className="boton" style={{ marginLeft: "10px", cursor: "pointer" }}>
-          📂 Cargar archivo
+      <div className="botones-archivo" style={{ marginTop: "12px" }}>
+        <button onClick={guardarArchivo} className="boton">💾 Guardar</button>
+        <label className="boton">
+          📂 Cargar
           <input type="file" accept=".json" onChange={recuperarArchivo} style={{ display: "none" }} />
         </label>
       </div>
     </div>
   );
+
 }
 
 export default IngresarDatos;

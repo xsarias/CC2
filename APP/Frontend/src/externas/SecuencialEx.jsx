@@ -5,34 +5,69 @@ import "../internas/IngresarDatos.css";
 export default function SecuencialEx({ onDataChange, onBack }) {
     const [registros, setRegistros] = useState([]);
     const [clave, setClave] = useState("");
-    const [tamano, setTamano] = useState();
-    const [tamanoClave, setTamanoClave] = useState();
+    const [tamano, setTamano] = useState(16);
+    const [tamanoClave, setTamanoClave] = useState(4);
     const [bloques, setBloques] = useState([]);
     const [resultado, setResultado] = useState("");
     const [ultimoInsertado, setUltimoInsertado] = useState(null);
+    const [bloqueActivo, setBloqueActivo] = useState(null);
+    const [indiceActivo, setIndiceActivo] = useState(null);
+    const limitesBloques = React.useMemo(() => {
+        const raiz = Math.ceil(Math.sqrt(tamano));
+        const regsPorBloque = Math.ceil(tamano / raiz);
+        const limites = [];
 
+        for (let i = 1; i <= raiz; i++) {
+            limites.push(i * regsPorBloque);
+        }
+
+        return limites;
+    }, [tamano]);
+
+
+    // --- Genera los bloques dinámicamente ---
     useEffect(() => {
         generarBloques();
     }, [tamano, registros]);
 
     const generarBloques = () => {
         const raiz = Math.ceil(Math.sqrt(tamano));
-        const registrosPorBloque = Math.ceil(tamano / raiz);
-        const nuevosBloques = [];
+        const regsPorBloque = Math.ceil(tamano / raiz);
 
-        let contador = 1;
-        for (let i = 0; i < raiz; i++) {
+        const nuevosBloques = [];
+        let ri = 0; // índice de registros ordenados
+
+        for (let b = 0; b < raiz; b++) {
             const datos = [];
-            for (let j = 0; j < registrosPorBloque && contador <= tamano; j++) {
-                datos.push({ posicion: contador, clave: registros[contador - 1] || "" });
-                contador++;
+            const inicio = b * regsPorBloque + 1;
+            const fin = Math.min((b + 1) * regsPorBloque, tamano);
+
+            // Insertar todos los registros que existan dentro de este bloque
+            for (let pos = inicio; pos <= fin && ri < registros.length; pos++) {
+                datos.push({ posicion: pos, clave: registros[ri] });
+                ri++;
             }
-            nuevosBloques.push({ id: i + 1, datos });
+
+            // Ahora control visual:
+            if (datos.length === 0) {
+                // Bloque vacío → mostrar solo la última posición
+                datos.push({ posicion: fin, clave: "" });
+
+            } else if (datos.length < (fin - inicio + 1)) {
+                // Hay registros pero el bloque aún no está lleno → mostrar la siguiente posición vacía
+                const siguientePos = inicio + datos.length;
+                datos.push({ posicion: siguientePos, clave: "" });
+            }
+
+            nuevosBloques.push({ id: b + 1, datos });
         }
 
         setBloques(nuevosBloques);
     };
 
+
+
+    // --- Insertar ordenadamente ---
     const insertar = () => {
         if (!clave) return alert("Ingrese una clave numérica.");
         if (!/^\d+$/.test(clave)) return alert("La clave debe ser numérica.");
@@ -49,12 +84,82 @@ export default function SecuencialEx({ onDataChange, onBack }) {
         if (onDataChange) onDataChange(nuevos);
     };
 
-    const buscar = () => {
-        if (!clave) return alert("Ingrese una clave a buscar.");
-        const existe = registros.includes(clave);
-        setResultado(existe ? `✅ Clave ${clave} encontrada.` : `❌ Clave ${clave} no encontrada.`);
+    // --- Búsqueda binaria ---
+    const buscarBinaria = (arr, claveBuscada) => {
+        let inicio = 0;
+        let fin = arr.length - 1;
+        while (inicio <= fin) {
+            const medio = Math.floor((inicio + fin) / 2);
+            const valorMedio = Number(arr[medio]);
+            const valorClave = Number(claveBuscada);
+
+            if (valorMedio === valorClave) return medio;
+            if (valorMedio < valorClave) inicio = medio + 1;
+            else fin = medio - 1;
+        }
+        return -1;
     };
 
+    const buscar = async () => {
+        if (!clave) return alert("Ingrese una clave a buscar.");
+        if (!registros.length) return alert("No hay registros almacenados.");
+
+        const claveNum = Number(clave);
+
+        // Recorremos los bloques de izquierda a derecha
+        for (let b = 0; b < bloques.length; b++) {
+            const bloqueActual = bloques[b];
+
+            // Ver si el bloque tiene claves reales
+            const clavesBloque = bloqueActual.datos
+                .filter(d => d.clave !== "" && d.clave !== undefined && d.clave !== null)
+                .map(d => Number(d.clave));
+
+            // Si está vacío seguimos al siguiente
+            if (!clavesBloque.length) continue;
+
+            // Animación: resaltar bloque
+            setBloqueActivo(b);
+            setIndiceActivo(null);
+            await new Promise(res => setTimeout(res, 400));
+
+            // --- Búsqueda Secuencial Interna ---
+            for (let i = 0; i < bloqueActual.datos.length; i++) {
+                const celda = bloqueActual.datos[i];
+
+                // Saltar celdas vacías
+                if (!celda.clave) continue;
+
+                // Resaltar celda actual
+                setIndiceActivo(celda.posicion - 1);
+                await new Promise(res => setTimeout(res, 400));
+
+                if (Number(celda.clave) === claveNum) {
+                    setResultado(`✅ Clave ${clave} encontrada:
+➡ Bloque: B${bloqueActual.id}
+➡ Posición: ${celda.posicion}`);
+
+                    // Mantener resaltado 1s
+                    await new Promise(res => setTimeout(res, 600));
+                    setBloqueActivo(null);
+                    setIndiceActivo(null);
+                    return;
+                }
+            }
+        }
+
+        // Si terminó todo el ciclo sin encontrar
+        setResultado(`❌ Clave ${clave} no encontrada.`);
+        setBloqueActivo(null);
+        setIndiceActivo(null);
+    };
+
+
+
+
+
+
+    // --- Eliminar ---
     const eliminar = () => {
         if (!clave) return alert("Ingrese una clave a eliminar.");
         const nuevos = registros.filter((x) => x !== clave);
@@ -64,11 +169,13 @@ export default function SecuencialEx({ onDataChange, onBack }) {
         setClave("");
     };
 
+    // --- Vaciar ---
     const vaciar = () => {
         setRegistros([]);
         setResultado("Tabla vaciada.");
     };
 
+    // --- Guardar / Cargar ---
     const guardarArchivo = () => {
         const nombre = prompt("Nombre del archivo (sin extensión):");
         if (!nombre) return;
@@ -99,42 +206,46 @@ export default function SecuencialEx({ onDataChange, onBack }) {
         e.target.value = "";
     };
 
-    const renderBloques = () => {
-        return (
-            <div className="bloques-container">
-                {bloques.map((bloque) => (
-                    <div key={bloque.id} className="bloque">
-                        <h4>B{bloque.id}</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Clave</th>
+    // --- Renderizado de los bloques ---
+    const renderBloques = () => (
+        <div className="bloques-container">
+            {bloques.map((bloque) => (
+                <div key={bloque.id} className="bloque">
+                    <h4>B{bloque.id}</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Clave</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bloque.datos.map((celda, i) => (
+                                <tr
+                                    key={i}
+                                    className={
+                                        (bloque.id - 1 === bloqueActivo && celda.posicion - 1 === indiceActivo)
+                                            ? "resaltado"
+                                            : (celda.clave === ultimoInsertado ? "nueva-fila" : "")
+                                    }
+                                >
+
+                                    <td>{celda.posicion || "-"}</td>
+                                    <td>{celda.clave || "-"}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {bloque.datos.map((celda) => (
-                                    <tr
-                                        key={celda.posicion}
-                                        className={
-                                            celda.clave === ultimoInsertado ? "nueva-fila" : ""
-                                        }
-                                    >
-                                        <td>{celda.posicion}</td>
-                                        <td>{celda.clave || "-"}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ))}
-            </div>
-        );
-    };
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ))}
+        </div>
+    );
+
+
 
     return (
-        <div className="contenedor">
-            <h3>📦 Búsqueda Secuencial Externa</h3>
+        <div className="contenedor-hash">
+            <h3>Búsqueda Secuencial Externa</h3>
 
             <div className="opciones">
                 <div className="campo">
@@ -157,7 +268,7 @@ export default function SecuencialEx({ onDataChange, onBack }) {
                     />
                 </div>
             </div>
-        <br></br>
+
             <div className="panel-controles">
                 <label>Clave:</label>
                 <input
@@ -176,12 +287,17 @@ export default function SecuencialEx({ onDataChange, onBack }) {
 
             {renderBloques()}
 
-            <br></br>
             <div className="botones-archivo">
+                <br></br>
                 <button onClick={guardarArchivo} className="boton">💾 Guardar</button>
                 <label className="boton">
                     📂 Cargar
-                    <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+                    <input
+                        type="file"
+                        accept=".json"
+                        onChange={cargarArchivo}
+                        style={{ display: "none" }}
+                    />
                 </label>
                 <button onClick={() => onBack && onBack()} className="boton">⬅ Volver</button>
             </div>

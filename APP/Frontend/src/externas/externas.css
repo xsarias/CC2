@@ -3,6 +3,26 @@
   text-align: center;
   color: white;
 }
+/* Resalta la fila actualmente comparada */
+.resaltado {
+    background-color: #ffe27a !important;
+    animation: vibrar 0.25s linear infinite;
+    font-weight: bold;
+}
+
+/* Suavizar el fondo cuando deja de estar activa */
+table tr:not(.resaltado) {
+    transition: background-color 0.4s ease;
+}
+
+/* Efecto "vibración" suave */
+@keyframes vibrar {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(1px); }
+    50% { transform: translateX(0); }
+    75% { transform: translateX(-1px); }
+    100% { transform: translateX(0); }
+}
 
 .opciones {
   display: flex;
@@ -57,6 +77,7 @@
   padding: 4px;
   font-weight: 600;
   text-align: center;
+  background-color: white;
 }
 
 .panel-archivos {

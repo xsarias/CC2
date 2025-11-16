@@ -13,7 +13,7 @@ function Hash({ onBack }) {
     const volverMenu = () => setOpcion(null);
 
     return (
-        <div className="contenedor">
+        <div className="contenedor-hash">
             <h2>Búsquedas Hash</h2>
 
             {!opcion && (

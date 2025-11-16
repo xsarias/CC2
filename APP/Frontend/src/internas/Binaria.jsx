@@ -94,8 +94,7 @@ function Binaria({ onBack }) {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <h2>📘 Búsqueda Binaria</h2>
-      <h3>🛠 Crear, buscar y eliminar en estructura</h3>
+      <h2>Búsqueda Binaria</h2>
 
       {/* 👉 Pasamos lógica a IngresarDatos */}
       <IngresarDatos
@@ -115,7 +114,7 @@ function Binaria({ onBack }) {
         onClick={onBack}
         style={{ marginTop: "10px" }}
         disabled={buscando}
-        className="volver"
+        className="botones"
       >
         ⬅ Volver
       </button>

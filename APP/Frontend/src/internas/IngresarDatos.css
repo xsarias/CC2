@@ -1,5 +1,5 @@
 /* === CONTENEDOR PRINCIPAL === */
-.contenedor {
+.contenedor-ingresar {
   text-align: center;
   margin-bottom: 20px;
   max-width: 700px;
@@ -7,9 +7,12 @@
   margin-right: auto;
   padding: 15px;
   font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
-  color: white;
+  background-color: #e7f0ee ;
+  color: #283b42;
+  border-radius: 15px;                   /* bordes redondeados */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* sombra elegante */
+  max-width: 7000px;  
 }
-
 /* === INPUTS === */
 .input-chico {
   width: 150px;
@@ -40,10 +43,12 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  color: white;
+  color: #283b42;
   transition: background 0.3s, transform 0.2s;
 }
-
+.titles_h2{
+  color: #283b42;
+}
 .boton:hover,
 .boton_agregar:hover {
   transform: scale(1.05);
@@ -51,26 +56,26 @@
 
 /* Colores específicos */
 .boton_agregar {
-  background-color:  #afd8df;
-  color: black;
+  background-color:  #1d6a96;
+  color: white;
 }
 .boton_agregar:hover {
-  background-color: #8ac5cf;
+  background-color: #85b8cb;
 }
 
 .boton {
-  background-color:  #afd8df;
-  color: black;
+  background-color: #1d6a96;
+  color: white;
 }
 .boton:hover {
-  background-color:#8ac5cf;
+  background-color:#85b8cb;;
 }
 
 .boton.eliminar {
-  background-color: #afd8df;
+  background-color: #1d6a96;;
 }
 .boton.eliminar:hover {
-  background-color: #8ac5cf;
+  background-color: #85b8cb;
 }
 
 /* === TABLA DINÁMICA VERTICAL (base) === */
@@ -82,14 +87,14 @@
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-  background-color: #444444;
+  background-color: #ffffff;
 }
 
 .tabla-estructura th {
-  background-color: #2b6777;
-  color: white;
+  background-color: #85b8cb;
+  color: rgb(0, 0, 0);
   padding: 10px;
-  font-size: 16px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 
@@ -99,11 +104,12 @@
   font-weight: bold;
   font-size: 15px;
   transition: all 0.25s ease;
+  color: black;
 }
 
 /* === ANIMACIONES DE ESTADO === */
 .tabla-estructura tr.revisando td {
-  background-color: #a18927;
+  background-color: #b5aabe;
   transition: all 0.4s ease;
 }
 
@@ -181,7 +187,7 @@
     padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-  background-color: #75379b;
+  background-color: #1d6a96;
   color: white;
   border: none;
   border-radius: 6px;
@@ -255,16 +261,15 @@
   flex-direction: column;
   min-width: 180px;
 }
-
 .opciones label {
   font-weight: 600;
-  color: #444;
-  margin-bottom: 4px;
+  color: #333;
   font-size: 0.9rem;
 }
 
 .opciones select,
-.opciones input[type="number"] {
+.opciones input[type="number"],
+.opciones input[type="text"] {
   padding: 6px 8px;
   border: 1px solid #aaa;
   border-radius: 6px;
@@ -273,15 +278,18 @@
   color: black;
 }
 
+
 .panel-controles {
-  color: white;
+  color: #283b42;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   margin-bottom: 15px;
+  font-family: 'Gill Sans', 'Lucida Sans', Calibri, 'Trebuchet MS', sans-serif;
+
 }
 
 .panel-controles label {
@@ -301,7 +309,7 @@
 
 .opciones label,
 .panel-controles label {
-  color: #fff;
+  color: #283b42;
 }
 
 .bloques-container {
@@ -342,7 +350,7 @@
 }
 
 .nueva-fila {
-  background-color: #a77777;
+  background-color: #a389b8;
   transition: background-color 0.8s ease;
 }
 /* ----- Bloques visuales ----- */
@@ -362,14 +370,12 @@
   transition: all 0.3s ease;
   min-width: 32px;
   text-align: center;
-  opacity: 1;
+  opacity: 0;
 }
 
 /* ----- Animación de aparición ----- */
 .animar-bloque {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-  transition: all 0.3s ease;
+  animation: aparecer 0.6s ease forwards;
 }
 
 @keyframes aparecer {
@@ -381,9 +387,6 @@
     opacity: 1;
     transform: translateX(0) scale(1);
   }
-}
-.bloque-aparecer {
-  animation: aparecer 0.6s ease forwards;
 }
 
 /* ----- Arreglos tipo [ 23, 45, 62 ] ----- */
@@ -436,12 +439,12 @@
 
 @keyframes pulseGreen {
   0% {
-    background: #4caf50;
+    background: #32cd32;
     box-shadow: 0 0 10px rgba(50,205,50,0.8);
     transform: scale(1.15);
   }
   50% {
-    background: #4caf50;
+    background: #4fff4f;
     box-shadow: 0 0 18px rgba(50,205,50,0.9);
   }
   100% {

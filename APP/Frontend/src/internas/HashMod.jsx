@@ -478,8 +478,8 @@ export default function HashMod({ onDataChange, onBack }) {
 
 
     return (
-        <div className="contenedor">
-            <h3>Función Hash</h3>
+        <div>
+            <h3>Función Hash Mod</h3>
 
             <div className="ecuacion">{ecuacionHash}</div>
             <div className="opciones">

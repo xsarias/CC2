@@ -332,7 +332,7 @@ export default function HashTruncamiento({ onDataChange, onBack }) {
 
   // --- Render principal ---
   return (
-    <div className="contenedor">
+    <div>
       <h3>Función de Truncamiento</h3>
       <div className="ecuacion">h(k) = truncar_dígitos(k) + 1</div>
 
