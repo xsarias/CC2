@@ -25,6 +25,7 @@ function Busqueda({ onSelect }) {
           <button onClick={() => onSelect("BinariaEx")} className="botones">Binaria</button>
           <button onClick={() => onSelect("HashEx")} className="botones">Hash</button>
           <button onClick={() => onSelect("HashExpansiones")} className="botones">Expanciones</button>
+          <button onClick={() => onSelect("Indices")} className="botones">Indices</button>
         </div>
       </div>
 

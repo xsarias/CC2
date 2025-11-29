@@ -66,15 +66,28 @@ export default function HashExpansiones({ onBack }) {
   };
 
   const agregarClave = () => {
-    if (!clave || !/^\d+$/.test(clave)) return alert("Ingrese una clave numérica válida.");
+    if (!clave || !/^\d+$/.test(clave))
+      return alert("Ingrese una clave numérica válida.");
+
     if (!bloquearConfig) setBloquearConfig(true);
-  
-    let estructuraCopia = estructura.map(fila => [...fila]);
+
     const k = parseInt(clave, 10);
+
+    // 🔍 1) Verificar si la clave ya existe (NO permitir duplicados)
+    for (let i = 0; i < estructura.length; i++) {
+      for (let j = 0; j < estructura[i].length; j++) {
+        if (estructura[i][j] === k) {
+          alert(`La clave ${k} ya existe en la estructura.`);
+          return;
+        }
+      }
+    }
+
+    let estructuraCopia = estructura.map(fila => [...fila]);
     const col = k % n;
     let insertado = false;
-  
-    // 1️⃣ Inserta la clave si hay espacio en su columna
+
+    // 2️⃣ Intentar insertar en su columna
     for (let i = 0; i < Number(r); i++) {
       if (estructuraCopia[i][col] === null) {
         estructuraCopia[i][col] = k;
@@ -82,25 +95,30 @@ export default function HashExpansiones({ onBack }) {
         break;
       }
     }
-  
+
     if (!insertado) {
       alert("No hay espacio disponible en esta columna.");
       return;
     }
-  
-    // 2️⃣ Calcula densidad después de insertar
+
+    // 3️⃣ Calcular D.O. después de insertar
     const densidadActual = calcularOcupacion(estructuraCopia);
-  
-    // 3️⃣ Si supera D.O. → expandir
+
+    // 4️⃣ Detectar si debe expandir
     if (densidadActual >= Number(densidadOcupacion)) {
       const clavesAntiguas = estructuraCopia.flat().filter(v => v !== null);
-      const nuevaN = tipoExpansion === "total" ? Number(n) * 2 : Number(n) + 1;
-      const nuevaR = tipoExpansion === "total" ? Number(r) * 2 : Number(r);
+
+      const nuevaN =
+        tipoExpansion === "total" ? Number(n) * 2 : Number(n) + 1;
+
+      const nuevaR =
+        tipoExpansion === "total" ? Number(r) * 2 : Number(r);
+
       const nuevaEstructura = Array.from({ length: nuevaR }, () =>
         Array(nuevaN).fill(null)
       );
-  
-      // Reinsertar todas las claves usando módulo
+
+      // 5️⃣ Reinsertar TODAS las claves
       clavesAntiguas.forEach(valor => {
         const nuevaCol = valor % nuevaN;
         for (let i = 0; i < nuevaR; i++) {
@@ -110,22 +128,28 @@ export default function HashExpansiones({ onBack }) {
           }
         }
       });
-  
+
+      // 6️⃣ Actualizar estructuras
       setEstructuraAnterior(estructuraCopia);
       setEstructura(nuevaEstructura);
       setN(nuevaN);
       setR(nuevaR);
-      setResultado(`⚙️ Expansión ${tipoExpansion} realizada. Reinserción de ${clavesAntiguas.length} claves.`);
+      setResultado(
+        `⚙️ Expansión ${tipoExpansion} realizada. Reinserción de ${clavesAntiguas.length} claves.`
+      );
       calcularOcupacion(nuevaEstructura);
     } else {
-      // Si no hay expansión, actualiza estructura normal
+      // 7️⃣ Inserción normal
       setEstructura(estructuraCopia);
-      setResultado(`✅ Clave ${clave} insertada correctamente. D.O. = ${densidadActual.toFixed(2)}%`);
+      setResultado(
+        `✅ Clave ${k} insertada correctamente. D.O. = ${densidadActual.toFixed(2)}%`
+      );
     }
-  
+
     setClave("");
   };
-  
+
+
 
 
 
@@ -197,6 +221,67 @@ export default function HashExpansiones({ onBack }) {
     setBloquearConfig(false);
     setEstructuraInicialCreada(false);
   };
+  const guardarArchivo = () => {
+    const nombre = prompt("Nombre del archivo (sin extensión):");
+    if (!nombre) return;
+
+    const data = {
+      n,
+      r,
+      tamanoClave,
+      densidadOcupacion,
+      densidadReduccion,
+      tipoExpansion,
+      estructura,
+      estructuraAnterior,
+      ocupar: ocupadas,
+      libres
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${nombre}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const cargarArchivo = (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+
+    const lector = new FileReader();
+
+    lector.onload = (evento) => {
+      try {
+        const data = JSON.parse(evento.target.result);
+
+        setN(data.n || "");
+        setR(data.r || "");
+        setTamanoClave(data.tamanoClave || "");
+        setDensidadOcupacion(data.densidadOcupacion || "");
+        setDensidadReduccion(data.densidadReduccion || "");
+        setTipoExpansion(data.tipoExpansion || "");
+
+        setEstructura(data.estructura || []);
+        setEstructuraAnterior(data.estructuraAnterior || null);
+
+        setOcupadas(data.ocupar || 0);
+        setLibres(data.libres || 0);
+
+        setEstructuraInicialCreada(true);
+        setBloquearConfig(true);
+
+        setResultado("📂 Archivo cargado correctamente.");
+
+      } catch (error) {
+        alert("Error al cargar archivo: formato inválido.");
+      }
+    };
+
+    lector.readAsText(archivo);
+    e.target.value = "";
+  };
+
 
   const renderEstructura = (estructura, titulo) => (
     <div className="bloque">
@@ -228,7 +313,7 @@ export default function HashExpansiones({ onBack }) {
 
   return (
     <div className="contenedor-secuencial">
-      <h3>🔁 Expansiones y Reducciones Hash (Función: Módulo)</h3>
+      <h3> Expansiones y Reducciones Hash (Función: Módulo)</h3>
 
       <div className="opciones">
         <div className="campo">
@@ -325,8 +410,12 @@ export default function HashExpansiones({ onBack }) {
         renderEstructura(estructura, "Estructura actual")}
 
       <div className="panel-archivos">
-        <button className="boton">💾 Guardar</button>
-        <button className="boton">📂 Cargar</button>
+        <button className="boton" onClick={guardarArchivo}>💾 Guardar</button>
+
+        <label className="boton">
+          📂 Cargar
+          <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
+        </label>
         <button onClick={onBack} className="boton">
           ⬅ Volver
         </button>
