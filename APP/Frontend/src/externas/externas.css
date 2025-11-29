@@ -48,6 +48,8 @@ table tr:not(.resaltado) {
   border-radius: 6px;
   border: 1px solid #bbb;
   margin-right: 8px;
+  background: #ffffff;
+  color: #283b42;
 }
 
 .bloques-horizontal {
@@ -65,6 +67,14 @@ table tr:not(.resaltado) {
   background: #fafafa;
   box-shadow: 2px 2px 5px #ccc;
   min-width: 100px;
+  color: #283b42;
+}
+
+.bloque th {
+  background-color: #85b8cb;
+}
+.bloque h4{
+  color: #283b42;
 }
 
 .titulo-bloque {
