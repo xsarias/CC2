@@ -1,29 +1,57 @@
+/* -------------------------
+   CONTENEDOR GENERAL
+------------------------- */
 .contenedor-secuencial {
   padding: 20px;
   text-align: center;
   color: #283b42;
+  position: relative;
+  z-index: 1;
+  overflow: visible !important;
 }
-/* Resalta la fila actualmente comparada */
+
+/* -------------------------
+   EFECTOS DE RESALTADO
+------------------------- */
 .resaltado {
-    background-color: #ffe27a !important;
-    animation: vibrar 0.25s linear infinite;
-    font-weight: bold;
+  background-color: #ffe27a !important;
+  box-shadow: 0 0 8px rgba(255, 200, 80, 0.6);
+  transform: translateY(-2px);
+  animation: vibrar 0.25s linear infinite;
 }
 
-/* Suavizar el fondo cuando deja de estar activa */
-table tr:not(.resaltado) {
-    transition: background-color 0.4s ease;
-}
-
-/* Efecto "vibración" suave */
 @keyframes vibrar {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(1px); }
-    50% { transform: translateX(0); }
-    75% { transform: translateX(-1px); }
-    100% { transform: translateX(0); }
+  0% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  50% { transform: translateX(0); }
+  75% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
 }
 
+table tr:not(.resaltado) {
+  transition: background-color 0.4s ease;
+}
+
+/* -------------------------
+   BOTONES
+------------------------- */
+.boton,
+.boton_agregar {
+  background: #0b6a86;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.boton_agregar {
+  background: #1b6fa5;
+}
+
+/* -------------------------
+   PANEL Y OPCIONES
+------------------------- */
 .opciones {
   display: flex;
   justify-content: center;
@@ -35,14 +63,6 @@ table tr:not(.resaltado) {
   margin-bottom: 15px;
 }
 
-
-.bloques-container{
-  color: black;
-}
-.bloque{
-  color: #000;
-}
-
 .panel-controles input {
   padding: 5px;
   border-radius: 6px;
@@ -50,11 +70,19 @@ table tr:not(.resaltado) {
   margin-right: 8px;
 }
 
+/* -------------------------
+   BLOQUES (Índices y Datos)
+------------------------- */
+.bloques-container {
+  color: black;
+}
+
 .bloques-horizontal {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
+  gap: 30px;
   margin-top: 20px;
 }
 
@@ -65,14 +93,35 @@ table tr:not(.resaltado) {
   background: #fafafa;
   box-shadow: 2px 2px 5px #ccc;
   min-width: 100px;
+  position: relative;
+  color: #000;
+  z-index: 3;
 }
 
+.cajon-bloque {
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+#niveles {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 2; /* Por encima del fondo */
+}
+
+/* -------------------------
+   TABLAS DENTRO DE BLOQUES
+------------------------- */
 .titulo-bloque {
-  font-weight: bold;
-  padding: 4px;
-  border-radius: 5px;
-  margin-bottom: 6px;
-  color:#283b42;
+  background: #e9d8ff;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  color: #283b42;
+  font-weight: 700;
 }
 
 .tabla-bloque {
@@ -88,9 +137,9 @@ table tr:not(.resaltado) {
   background-color: white;
 }
 
-.panel-archivos {
-  margin-top: 15px;
-}
+/* -------------------------
+   TABLAS PRINCIPALES
+------------------------- */
 .tabla-estructura {
   border-collapse: collapse;
   margin: 25px auto;
@@ -98,13 +147,13 @@ table tr:not(.resaltado) {
   text-align: center;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   background-color: #ffffff;
 }
 
 .tabla-estructura th {
   background-color: #85b8cb;
-  color: rgb(0, 0, 0);
+  color: #000;
   padding: 10px;
   font-size: 12px;
   text-transform: uppercase;
@@ -115,41 +164,35 @@ table tr:not(.resaltado) {
   padding: 10px;
   font-weight: bold;
   font-size: 15px;
-  transition: all 0.25s ease;
-  color: black;
-}
-/* extras para IndicesEx visual */
-.bloque .titulo-bloque {
-  background: #e9d8ff;
-  padding: 8px;
-  border-radius: 6px;
-  margin-bottom: 8px;
   color: #283b42;
-  font-weight: 700;
-}
-.tabla-estructura th { background-color: #85b8cb; color: #000; }
-.tabla-estructura td { color: #283b42; }
-.resaltado { background-color: #ffe27a !important; }
-/* ÍndicesSim - ajustes visuales */
-.tabla-estructura small { font-size: 11px; }
-.resaltado { background-color: #ffe27a !important; animation: vibrar 0.25s linear infinite; }
-.boton_agregar { background:#1b6fa5; color:white; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; }
-.boton { background:#0b6a86; color:white; padding:8px 10px; border-radius:6px; border:none; cursor:pointer; margin-left:6px; }
-
-.contenedor-secuencial {
-  position: relative;
-  z-index: 1;
-}
-.resultado{
-  color: black;
+  transition: all 0.25s ease;
 }
 
-.contenedor-secuencial .arrow-layer {
+.tabla-estructura small {
+  font-size: 11px;
+}
+
+/* -------------------------
+   CAPA PARA FLECHAS SVG
+------------------------- */
+.arrow-layer {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 0; /* debajo de tablas, encima del fondo */
+  z-index: 9999;
+  overflow: visible;
 }
+
+/* -------------------------
+   RESULTADOS
+------------------------- */
+.resultado {
+  color: #111;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+
