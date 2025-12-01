@@ -68,6 +68,8 @@ table tr:not(.resaltado) {
   border-radius: 6px;
   border: 1px solid #bbb;
   margin-right: 8px;
+  background: #ffffff;
+  color: #283b42;
 }
 
 /* -------------------------
