@@ -350,7 +350,7 @@ export default function BinariaEx({ onDataChange, onBack }) {
                 />
                 <button onClick={insertar} className="boton_agregar">➕ Insertar</button>
                 <button onClick={buscar} className="boton">🔍 Buscar</button>
-                <button onClick={eliminar} className="boton eliminar">🗑 Eliminar</button>
+                <button onClick={eliminar} className="boton eliminar">✖️ Eliminar</button>
                 <button onClick={vaciar} className="boton">♻ Vaciar</button>
             </div>
 

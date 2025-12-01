@@ -16,8 +16,9 @@ import "./internas/Huffman";
 import SecuencialEx from "./externas/SecuencialEx";
 import BinariaEx from "./externas/BinariaEx";
 import HashExpansiones from "./externas/HashExpansiones"
-import Indices from "./externas/Indices";
+import IndicesSimulador from "./externas/IndicesSimulador";
 
+import HashEx from "./externas/HashEx";
 function App() {
   const [message, setMessage] = useState("Cargando...");
   const [tab, setTab] = useState("home");
@@ -58,8 +59,10 @@ function App() {
 
       {tab == "SecuencialEx" && <SecuencialEx onBack={() => setTab("busqueda")} />}
       {tab == "BinariaEx" && <BinariaEx onBack={() => setTab("busqueda")} />}
+      {tab == "HashEx" && <HashEx onBack={() => setTab("busqueda")} />}
       {tab == "HashExpansiones" && <HashExpansiones onBack={() => setTab("busqueda")} />}
-      {tab == "Indices" && <Indices onBack={() => setTab("busqueda")} />}
+      {tab === "IndicesSimulador" && <IndicesSimulador onBack={() => setTab("busqueda")} />}
+
 
 
       {/* Grafos */}
