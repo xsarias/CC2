@@ -62,7 +62,7 @@ export default function IndicesSimulador({ onBack }) {
     const brfIndex = Math.max(1, Math.floor(Math.max(1, bDatos) / ri));
     let bIndex = 1;
     if (tipo === "primario") {
-      bIndex = Math.max(1, Math.max(1, bDatos));
+      bIndex = Math.max(1, Math.ceil(Math.max(1, bDatos)/brfIndex));
     } else {
       bIndex = Math.max(1, Math.ceil(Math.max(1, rTotal) / brfIndex));
     }
