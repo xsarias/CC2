@@ -118,12 +118,13 @@ table tr:not(.resaltado) {
    TABLAS DENTRO DE BLOQUES
 ------------------------- */
 .titulo-bloque {
-  background: #e9d8ff;
+  background: transparent !important;
   padding: 8px;
   border-radius: 6px;
   margin-bottom: 8px;
-  color: #283b42;
+  color: black;
   font-weight: 700;
+  box-shadow: none !important;
 }
 
 .tabla-bloque {
@@ -198,3 +199,78 @@ table tr:not(.resaltado) {
 }
 
 
+/* ---------------------------------------------------
+   CUBETAS SECUNDARIAS (MISMO ESTILO QUE PRINCIPALES)
+--------------------------------------------------- */
+
+.cubetas-secundarias-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 25px;
+  padding: 10px 0;
+}
+
+/* Caja individual de cubeta */
+.cubeta-secundaria {
+  border: 2px solid #aaa;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafafa;
+  width: 120px;
+  min-height: 150px;
+  text-align: center;
+  box-shadow: 2px 2px 5px #ccc;
+}
+
+/* Título de la cubeta */
+.cubeta-secundaria-titulo {
+  background: #e9d8ff;
+  padding: 8px;
+  font-weight: bold;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  color: #283b42;
+}
+
+/* Tabla interna */
+.cubeta-secundaria-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cubeta-secundaria-tabla td {
+  border: 1px solid #aaa;
+  padding: 4px;
+  font-weight: 600;
+  background: white;
+  text-align: center;
+}
+
+/* Para cuando la cubeta está vacía */
+.cubeta-secundaria-vacia {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-top: 10px;
+}
+
+/* Transición suave al resaltar */
+.cubeta-secundaria.resaltado {
+  background-color: #ffe27a !important;
+  box-shadow: 0 0 8px rgba(255, 200, 80, 0.6);
+  transform: translateY(-2px);
+}
+.scroll-horizontal {
+  overflow-x: auto;
+  padding-bottom: 10px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.bloques-container {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}

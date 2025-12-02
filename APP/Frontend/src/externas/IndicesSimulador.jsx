@@ -599,7 +599,7 @@ export default function IndicesSimulador({ onBack }) {
           <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
         </label>
 
-        <button className="boton" style={{ marginLeft: 8 }} onClick={vaciar}>♻️ Vaciar</button>
+        <button className="boton" style={{ marginLeft: 8 }} onClick={vaciar}>♻ Vaciar</button>
         <button className="boton" style={{ marginLeft: 8 }} onClick={() => onBack && onBack()}>⬅ Volver</button>
       </div>
 
