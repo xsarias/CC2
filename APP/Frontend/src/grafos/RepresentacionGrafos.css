@@ -1,29 +1,65 @@
-.representacion-grafos-contenedor {
+.panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  gap: 2rem;
-  padding: 2rem;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f0f7fb;
+  border: 2px solid #1d6a96;
+  border-radius: 8px;
 }
 
-.representacion-grafos-contenedor h2 {
-  font-size: 2rem;
-  color: #333;
+.crear-card {
+  background-color: #e7f0ee;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.crear-header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1d6a96;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.campo {
   margin-bottom: 1rem;
 }
 
-.representacion-grafos-contenedor .contenido {
-  background-color: #f5f5f5;
-  padding: 2rem;
-  border-radius: 8px;
-  text-align: center;
-  max-width: 600px;
+.campo label {
+  display: block;
+  font-weight: bold;
+  color: #283b42;
+  margin-bottom: 0.5rem;
 }
 
-.representacion-grafos-contenedor p {
-  font-size: 1.1rem;
-  color: #666;
-  line-height: 1.6;
+.campo input[type="radio"] {
+  margin-right: 0.5rem;
+}
+
+.botones-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.boton {
+  background-color: #1d6a96;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+}
+
+.boton:hover {
+  background-color: #155a7a;
 }

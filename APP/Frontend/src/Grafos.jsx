@@ -6,7 +6,7 @@ function Grafos({ onSelect }) {
       <div className="grupo-botones">
         <button onClick={() => onSelect("operaciones_grafos")} className="botones">Operaciones con Grafos</button>
         <button onClick={() => onSelect("arboles_grafos")} className="botones">Árboles como Grafos</button>
-        <button onClick={() => onSelect("representacion_grafos")} className="botones">Representación de la Información con Grafos</button>
+        <button onClick={() => onSelect("representacion_grafos")} className="botones">Representación de la Información en Grafos</button>
         
       </div>
        <br></br>
