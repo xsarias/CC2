@@ -1,8 +1,8 @@
 import { useState } from "react";
 import HashModEx from "./HashModEx";
-/*import HashCuadradoEx from "./HashCuadradoEx";
-import HashTruncamientoEx from "./HashTruncamientoEx";
-import HashPlegamientoEx from "./HashPlegamientoEx";*/
+import HashCuadradoEx from "./HashCuadradoEx"
+import HashTruncamientoEx from "./HashTruncEx"
+import HashPlegamiento from "./HashPlegamiento";
 import "../App.css";
 
 
@@ -22,22 +22,22 @@ function HashEx({ onBack }) {
                     <p>Selecciona una función hash:</p>
 
                     <button onClick={() => setOpcion("mod")} className="botones">
-                        Función MOD
+                        Función HashMOD
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("")} className="botones">
-                        Función del Cuadrado
+                    <button onClick={() => setOpcion("cuadrado")} className="botones">
+                        Función del HashCuadrado
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("")} className="botones">
-                        Función de Truncamiento
+                    <button onClick={() => setOpcion("truncamiento")} className="botones">
+                        Función de HashTruncamiento
                     </button>
                     <br></br>
                     <br></br>
-                    <button onClick={() => setOpcion("")} className="botones">
-                        Función de Plegamiento
+                    <button onClick={() => setOpcion("plegamiento")} className="botones">
+                        Función de HashPlegamiento
                     </button>
                     <br></br>
                     <br></br>
@@ -50,7 +50,7 @@ function HashEx({ onBack }) {
             {opcion === "mod" && <HashModEx onBack={volverMenu} />}
             {opcion === "cuadrado" && <HashCuadradoEx onBack={volverMenu} />}
             {opcion === "truncamiento" && <HashTruncamientoEx onBack={volverMenu} />}
-            {opcion === "plegamiento" && <HashPlegamientoEx onBack={volverMenu} />}
+            {opcion === "plegamiento" && <HashPlegamiento onBack={volverMenu} />}
         </div>
     );
 }
