@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Busqueda from "./Busqueda";
+import Grafos from "./Grafos";
+import OperacionesGrafos from "./grafos/OperacionesGrafosClean";
+import RepresentacionGrafos from "./grafos/RepresentacionGrafos";
+import ArbolesGrafos from "./grafos/ArbolesGrafos";
 import Secuencial from "./internas/Secuencial";
 import Binaria from "./internas/Binaria";
 import Hash from "./internas/Hash";
@@ -48,6 +52,13 @@ function App() {
       {/* Menú de algoritmos */}
       {tab === "busqueda" && <Busqueda onSelect={(alg) => setTab(alg)} />}
 
+      {/* Menú de grafos */}
+      {tab === "grafos" && <Grafos onSelect={(alg) => setTab(alg)} />}
+
+      {/* Componentes de grafos */}
+      {tab === "operaciones_grafos" && <OperacionesGrafos onBack={() => setTab("grafos")} />}
+      {tab === "representacion_grafos" && <RepresentacionGrafos onBack={() => setTab("grafos")} />}
+      {tab === "arboles_grafos" && <ArbolesGrafos onBack={() => setTab("grafos")} />}
 
       {tab === "secuencial" && <Secuencial array={datos} onBack={() => setTab("busqueda")} />}
       {tab === "binaria" && <Binaria array={datos} onBack={() => setTab("busqueda")} />}

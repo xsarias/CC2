@@ -348,9 +348,9 @@ export default function BinariaEx({ onDataChange, onBack }) {
                     onChange={(e) => setClave(e.target.value)}
                     placeholder={`Ej: ${"1".repeat(tamanoClave || 4)}`}
                 />
-                <button onClick={insertar} className="boton_agregar">➕ Insertar</button>
+                <button onClick={insertar} className="boton">➕ Insertar</button>
                 <button onClick={buscar} className="boton">🔍 Buscar</button>
-                <button onClick={eliminar} className="boton eliminar">✖️ Eliminar</button>
+                <button onClick={eliminar} className="boton">✖️ Eliminar</button>
                 <button onClick={vaciar} className="boton">♻ Vaciar</button>
             </div>
 

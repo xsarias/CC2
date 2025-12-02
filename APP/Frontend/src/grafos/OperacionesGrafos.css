@@ -1,0 +1,53 @@
+/* Estilos específicos para OperacionesGrafos: tarjetas y botones coherentes */
+
+.operaciones-grafos.panel {
+   padding: 18px;
+   background: linear-gradient(180deg,#f7fcfd 0%, #eef8fa 100%);
+   border-radius: 12px;
+   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+   border: 1px solid rgba(15,106,126,0.06);
+}
+
+.operaciones-grafos .crear-card {
+   background: linear-gradient(180deg,#e6f0f2 0%, #f7fbfb 100%);
+   border-radius: 12px;
+   padding: 18px;
+   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+   border: 1px solid rgba(34,93,110,0.08);
+}
+.operaciones-grafos .crear-header {
+   background: rgba(34,93,110,0.04);
+   border: 2px solid rgba(34,93,110,0.08);
+   padding: 12px 14px;
+   border-radius: 8px;
+   font-weight: 700;
+   color: #123d4a;
+   margin-bottom: 12px;
+   text-align:center;
+}
+
+.operaciones-grafos .full-width-btn { display:block; width:100%; padding:10px 12px; border-radius:8px; background:#0f6a7e; color:#fff; border:none; font-weight:700; }
+.operaciones-grafos .full-width-btn.secondary { background:#eef7f8; color:#0f6a7e; border:1px solid rgba(15,106,126,0.08); }
+
+/* modal styles for embedding the editor in an overlay */
+.modal-overlay {
+   position: fixed;
+   top: 0; left: 0; right: 0; bottom: 0;
+   background: rgba(0,0,0,0.45);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   z-index: 1200;
+}
+.modal-content {
+   width: 90%;
+   max-width: 1100px;
+   max-height: 90vh;
+   overflow: auto;
+   border-radius: 12px;
+   padding: 14px;
+   background: white;
+   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+
