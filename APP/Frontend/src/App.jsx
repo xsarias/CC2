@@ -74,8 +74,6 @@ function App() {
       {tab == "HashExpansiones" && <HashExpansiones onBack={() => setTab("busqueda")} />}
       {tab === "IndicesSimulador" && <IndicesSimulador onBack={() => setTab("busqueda")} />}
 
-
-
     </div>
   );
 }
