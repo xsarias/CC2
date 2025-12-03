@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "../App.css";
 import "../internas/IngresarDatos.css";
+import "./externas.css";
 
 export default function HashMod({ onBack }) {
   const [tamano, setTamano] = useState();
@@ -431,6 +432,7 @@ export default function HashMod({ onBack }) {
         <div className="campo">
           <label>Tamaño (n):</label>
           <input
+            className="panel-input"
             type="number"
             min="4"
             value={tamano}
@@ -441,6 +443,7 @@ export default function HashMod({ onBack }) {
         <div className="campo">
           <label>Tamaño clave:</label>
           <input
+            className="panel-input"
             type="number"
             min="1"
             value={tamanoClave}
@@ -451,6 +454,7 @@ export default function HashMod({ onBack }) {
         <div className="campo">
           <label>Método:</label>
           <select
+            className="panel-select"
             value={metodoColision}
             onChange={e => setMetodoColision(e.target.value)}
           >
@@ -465,7 +469,7 @@ export default function HashMod({ onBack }) {
       {parametrosCompletos && (
         <div className="panel-controles">
           <label>Clave:</label>
-          <input value={clave} onChange={e => setClave(e.target.value)} />
+          <input className="panel-input" value={clave} onChange={e => setClave(e.target.value)} />
 
           <button onClick={insertar} className="botonr"> ➕ Insertar</button>
           <button onClick={buscar} className="boton"> 🔍 Buscar</button>

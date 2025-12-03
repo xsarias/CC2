@@ -66,3 +66,63 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Project-wide primary button and select styles
+   - Apply primary color to non-menu buttons
+   - Normalize select/dropdown appearance
+*/
+.boton,
+.boton_agregar,
+button.btn-primary {
+  background: #0b6a86 !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 0.5rem 0.9rem !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+}
+
+/* Dropdowns: white background, black text, thin primary-colored border */
+
+/* Form controls: selects and inputs */
+select,
+input,
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+input[type="password"],
+textarea,
+.panel-controles select,
+.opciones select {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #0b6a86 !important;
+  border-radius: 6px !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+/* Specific helper class for select controls used across externals */
+.panel-select {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #0b6a86 !important;
+  border-radius: 6px !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+/* Helper for inputs inside project panels */
+.panel-input {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #0b6a86 !important;
+  border-radius: 6px !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+/* Make sure small buttons that intentionally differ (e.g., menu) can opt-out by using .btn-menu */
+.btn-menu {
+  background: transparent !important;
+  color: inherit !important;
+  border: 1px solid transparent !important;
+}

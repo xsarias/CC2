@@ -319,6 +319,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>Tamaño estructura (n):</label>
           <input
+            className="panel-input"
             type="number"
             value={n}
             onChange={(e) => setN(e.target.value)}
@@ -328,6 +329,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>Registros (r):</label>
           <input
+            className="panel-input"
             type="number"
             value={r}
             onChange={(e) => setR(e.target.value)}
@@ -337,6 +339,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>Tamaño clave:</label>
           <input
+            className="panel-input"
             type="number"
             value={tamanoClave}
             onChange={(e) => setTamanoClave(e.target.value)}
@@ -346,6 +349,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>D.O (%):</label>
           <input
+            className="panel-input"
             type="number"
             value={densidadOcupacion}
             onChange={(e) => setDensidadOcupacion(e.target.value)}
@@ -355,6 +359,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>D.R (%):</label>
           <input
+            className="panel-input"
             type="number"
             value={densidadReduccion}
             onChange={(e) => setDensidadReduccion(e.target.value)}
@@ -364,6 +369,7 @@ export default function HashExpansiones({ onBack }) {
         <div className="campo">
           <label>Tipo expansión:</label>
           <select
+            className="panel-select"
             value={tipoExpansion}
             onChange={(e) => setTipoExpansion(e.target.value)}
             disabled={bloquearConfig}
@@ -375,7 +381,7 @@ export default function HashExpansiones({ onBack }) {
         </div>
         <div className="campo">
           <label>Función hash:</label>
-          <select value="mod" disabled>
+          <select className="panel-select" value="mod" disabled>
             <option value="mod">Módulo</option>
           </select>
         </div>

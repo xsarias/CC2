@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "../App.css";
 import "../internas/IngresarDatos.css";
+import "./externas.css";
 
 export default function HashCuadradoEx({ onBack }) {
   const [tamano, setTamano] = useState();
@@ -500,7 +501,7 @@ export default function HashCuadradoEx({ onBack }) {
       <div className="opciones">
         <div className="campo">
           <label>Tamaño (n):</label>
-          <input type="number" min="4" value={tamano} onChange={(e) => {
+          <input className="panel-input" type="number" min="4" value={tamano} onChange={(e) => {
             setTamano(Number(e.target.value) || 0);
             // si el usuario cambia tamaño MANUALMENTE consideramos que ya no hay "archivo cargado"
             if (archivoCargado) setArchivoCargado(false);
@@ -509,12 +510,12 @@ export default function HashCuadradoEx({ onBack }) {
 
         <div className="campo">
           <label>Tamaño clave:</label>
-          <input type="number" min="1" value={tamanoClave} onChange={(e) => setTamanoClave(Number(e.target.value) || 0)} />
+          <input className="panel-input" type="number" min="1" value={tamanoClave} onChange={(e) => setTamanoClave(Number(e.target.value) || 0)} />
         </div>
 
         <div className="campo">
           <label>Método:</label>
-          <select value={metodoColision} onChange={(e) => {
+          <select className="panel-select" value={metodoColision} onChange={(e) => {
             setMetodoColision(e.target.value);
             // si el usuario cambia método manualmente consideramos que ya no hay "archivo cargado"
             if (archivoCargado) setArchivoCargado(false);
@@ -530,7 +531,7 @@ export default function HashCuadradoEx({ onBack }) {
       {parametrosCompletos && (
         <div className="panel-controles">
           <label>Clave:</label>
-          <input value={clave} onChange={(e) => setClave(e.target.value)} />
+          <input className="panel-input" value={clave} onChange={(e) => setClave(e.target.value)} />
 
           <button onClick={insertar} className="boton">➕ Insertar</button>
           <button onClick={buscar} className="boton">🔍 Buscar</button>

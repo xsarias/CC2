@@ -62,9 +62,9 @@
    border: 1px solid rgba(15,106,126,0.18);
  }
  
- /* Botones genéricos */
+ /* Botones genéricos: usar mismo color que .boton_agregar para consistencia visual */
  .operaciones-grafos .boton {
-   background: #0f6a7e;
+   background: #138ea8;
    color: #fff;
    border-radius: 8px;
    border: none;

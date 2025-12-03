@@ -557,7 +557,7 @@ export default function IndicesSimulador({ onBack }) {
       <div className="opciones" style={{ gap: 12, marginTop: 6 }}>
         <div className="campo">
           <label>B (bytes):</label>
-          <input type="number" value={B} onChange={(e) => setB(e.target.value)} />
+          <input className="panel-input" type="number" value={B} onChange={(e) => setB(e.target.value)} />
         </div>
         <div className="campo">
           <label>r (registros):</label>
@@ -573,7 +573,7 @@ export default function IndicesSimulador({ onBack }) {
         </div>
         <div className="campo">
           <label>Tipos índice:</label>
-          <select value={nivelTipo} onChange={(e) => setNivelTipo(e.target.value)}>
+          <select className="panel-select" value={nivelTipo} onChange={(e) => setNivelTipo(e.target.value)}>
             <option value="unNivel">Un nivel</option>
             <option value="multinivel">Multinivel</option>
           </select>
@@ -582,7 +582,7 @@ export default function IndicesSimulador({ onBack }) {
 
         <div className="campo">
           <label>Nivel:</label>
-          <select value={tipoIndice} onChange={(e) => setTipoIndice(e.target.value)}>
+          <select className="panel-select" value={tipoIndice} onChange={(e) => setTipoIndice(e.target.value)}>
             <option value="primario">Primario</option>
             <option value="secundario">Secundario</option>
           </select>

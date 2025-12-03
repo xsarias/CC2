@@ -28,6 +28,8 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
   const [grafoNombre, setGrafoNombre] = useState("");
   const [crearDesdeOperacion, setCrearDesdeOperacion] = useState(false);
   const inputGrafoRef = useRef(null);
+  const svgRef = useRef(null);
+  const dragging = useRef(null);
   const [operacion, setOperacion] = useState("");
   const [resultado, setResultado] = useState(null); // {vertices, aristas}
   const [treeType, setTreeType] = useState('min'); // 'min' | 'max'
@@ -704,6 +706,47 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
     return Math.hypot(px - cx, py - cy);
   };
 
+  const handleMouseDownVertex = (e, idx) => {
+    e.stopPropagation();
+    dragging.current = { idx, startX: e.clientX, startY: e.clientY };
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragging.current) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const { idx, startX, startY } = dragging.current;
+    const rect = svg.getBoundingClientRect();
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    dragging.current.startX = e.clientX;
+    dragging.current.startY = e.clientY;
+
+    setVertices((prev) =>
+      prev.map((v, i) => {
+        if (i !== idx) return v;
+        let newX = v.x + dx;
+        let newY = v.y + dy;
+        const margin = 30;
+        const minX = margin;
+        const maxX = rect.width - margin;
+        const minY = margin;
+        const maxY = rect.height - margin;
+        if (newX < minX) newX = minX;
+        if (newX > maxX) newX = maxX;
+        if (newY < minY) newY = minY;
+        if (newY > maxY) newY = maxY;
+        return { ...v, x: newX, y: newY };
+      })
+    );
+  };
+
+  const handleMouseUp = () => {
+    dragging.current = null;
+  };
+
   // Helpers para tipos y combinación de pesos
   const detectEdgeWeightType = (es) => {
     if (!es || es.length === 0) return "none";
@@ -926,7 +969,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
     const strokeWidth = 2;
 
     return (
-      <svg width={width} height={height} style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: bgColor }}>
+      <svg ref={svgRef} width={width} height={height} style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: bgColor }} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         <defs>
           <marker id="arrow-op" viewBox="0 0 10 10" refX="12" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d6a96" />
@@ -997,9 +1040,9 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
           });
         })}
 
-        {layoutVs.map((v) => (
+        {layoutVs.map((v, i) => (
           <g key={`v-op-${v.id}`}>
-            <circle cx={v.x} cy={v.y} r="22" fill="#1d6a96" stroke="#283b42" strokeWidth="2" />
+            <circle cx={v.x} cy={v.y} r="22" fill="#1d6a96" stroke="#283b42" strokeWidth="2" onMouseDown={(e)=>handleMouseDownVertex(e, i)} />
             <text x={v.x} y={v.y} textAnchor="middle" dy="0.3em" fill="white" fontSize="13" fontWeight="bold" pointerEvents="none">{v.etiqueta || `V${v.id}`}</text>
           </g>
         ))}
@@ -1135,7 +1178,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
                   : `Vértice ${vertices[primeraArista]?.etiqueta || `V${primeraArista}`} tendrá adyacencia con: seleccione el destino`}
               </p>
               <div style={{ position: "relative", maxHeight: "440px", overflowY: "visible", overflowX: "visible" }}>
-                <svg width="520" height="420" style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: "#e7f0ee" }}>
+                <svg ref={svgRef} width="520" height="420" style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: "#e7f0ee" }} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
                   {Array.from(gruposAristas.entries()).map(([key, grupo]) => {
                     const groupSize = grupo.length;
                     const midIndex = (groupSize - 1) / 2;
@@ -1226,7 +1269,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
                           if ((mergingMode || contractingMode) && mergeSelection.includes(idx)) fillColor = "#f6c85f"; // selected for merge/contracción
                           else if (primeraArista === idx) fillColor = "#85b8cb";
                             return (
-                            <circle cx={v.x} cy={v.y} r="22" fill={fillColor} stroke="#283b42" strokeWidth="2" style={{ cursor: "pointer", transition: "all 0.2s" }} onClick={() => {
+                            <circle cx={v.x} cy={v.y} r="22" fill={fillColor} stroke="#283b42" strokeWidth="2" style={{ cursor: "pointer", transition: "all 0.2s" }} onMouseDown={(e)=>handleMouseDownVertex(e, idx)} onClick={() => {
                                       if (deletingVertexMode) { handleVertexDeleteClick(idx); }
                                       else if (mergingMode || contractingMode) toggleSelectMerge(idx);
                                       else handleClickVertice(idx);
