@@ -41,7 +41,7 @@ function App() {
       {tab === "home" && (
         <>
           <h1 className="titulo">Ciencias de la Computación II</h1>
-          <p className="mensaje">{message}</p>
+          <p className="mensaje">¡Bienvenido!</p>
           <div className="app-container">
             <button onClick={() => setTab("busqueda")} className="botones">Búsquedas</button>
             <button onClick={() => setTab("grafos")} className="botones">Grafos</button>
@@ -76,8 +76,6 @@ function App() {
 
 
 
-      {/* Grafos */}
-      {tab === "grafos" && <h2>Aquí irá la sección de grafos 🚀</h2>}
     </div>
   );
 }

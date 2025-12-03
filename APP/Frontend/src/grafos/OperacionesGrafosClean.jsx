@@ -30,6 +30,9 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
   const inputGrafoRef = useRef(null);
   const [operacion, setOperacion] = useState("");
   const [resultado, setResultado] = useState(null); // {vertices, aristas}
+  const [treeType, setTreeType] = useState('min'); // 'min' | 'max'
+  const [tComplement, setTComplement] = useState(null); // {vertices, aristas}
+  const [sourceGraph, setSourceGraph] = useState('grafo1'); // 'grafo1' | 'grafo2' | 'actual'
 
   const gruposAristas = useMemo(() => {
     const map = new Map();
@@ -530,6 +533,9 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
     }
   };
 
+  // Al montar, recuperar grafos temporales desde localStorage si existen
+  // No localStorage syncing: graphs are isolated per-component (in-memory) by design.
+
   const handleExportarJSON = () => {
     // prefer saved object if present
     const saved = grafoActual === 1 ? grafo1 : grafo2;
@@ -826,6 +832,57 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
     setResultado({ vertices, aristas: coercedAristas });
   };
 
+  // Compute spanning tree (Kruskal). Returns {treeEdges, complementEdges}
+  const computeSpanningTree = (vs, as, minimize = true) => {
+    if (!vs || vs.length === 0) return { treeEdges: [], complementEdges: as || [] };
+    // Prepare edges with numeric weights
+    const edges = (as || []).map(a => ({ ...a, __w: coerceEdgeWeightToNumeric(a.peso) }));
+    edges.sort((a, b) => (a.__w - b.__w));
+    if (!minimize) edges.reverse(); // for maximum spanning tree
+
+    // DSU
+    const parent = new Array(vs.length).fill(0).map((_, i) => i);
+    const find = (x) => parent[x] === x ? x : (parent[x] = find(parent[x]));
+    const union = (a, b) => { const pa = find(a); const pb = find(b); if (pa === pb) return false; parent[pb] = pa; return true; };
+
+    const treeEdges = [];
+    for (const e of edges) {
+      const o = Number(e.origen);
+      const d = Number(e.destino);
+      if (isNaN(o) || isNaN(d) || o < 0 || d < 0 || o >= vs.length || d >= vs.length) continue;
+      if (union(o, d)) {
+        treeEdges.push(e);
+      }
+    }
+
+    const treeIds = new Set(treeEdges.map(e => e.id));
+    const complementEdges = (as || []).filter(a => !treeIds.has(a.id));
+    return { treeEdges, complementEdges };
+  };
+
+  const visualizeTree = () => {
+    // choose source graph
+    let vs = [];
+    let as = [];
+    if (sourceGraph === 'grafo1') {
+      if (grafo1) { vs = grafo1.vertices || []; as = grafo1.aristas || []; }
+      else if (grafoActual === 1) { vs = vertices; as = aristas; }
+    } else if (sourceGraph === 'grafo2') {
+      if (grafo2) { vs = grafo2.vertices || []; as = grafo2.aristas || []; }
+      else if (grafoActual === 2) { vs = vertices; as = aristas; }
+    } else {
+      vs = vertices; as = aristas;
+    }
+    const minimize = treeType === 'min';
+    const { treeEdges, complementEdges } = computeSpanningTree(vs, as, minimize);
+    // prepare resultado and complement
+    const treeCopy = treeEdges.map(e => ({ ...e }));
+    const compCopy = complementEdges.map(e => ({ ...e }));
+    layoutCircular(vs, 520, 420);
+    setResultado({ vertices: vs || [], aristas: treeCopy });
+    setTComplement({ vertices: vs || [], aristas: compCopy });
+  };
+
   // Disponibilidad de cada grafo (guardado o actual en memoria)
   const hasG1 = !!grafo1 || (grafoActual === 1 && vertices.length > 0);
   const hasG2 = !!grafo2 || (grafoActual === 2 && vertices.length > 0);
@@ -870,6 +927,11 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
 
     return (
       <svg width={width} height={height} style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: bgColor }}>
+        <defs>
+          <marker id="arrow-op" viewBox="0 0 10 10" refX="12" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d6a96" />
+          </marker>
+        </defs>
         {grupos.map(([key, grupo]) => {
           const groupSize = grupo.length;
           const midIndex = (groupSize - 1) / 2;
@@ -891,7 +953,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
               return (
                 <g key={arista.id}>
                   <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  <path d={path} stroke={strokeColor} strokeWidth={strokeWidth + 1.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <path d={path} stroke={strokeColor} strokeWidth={strokeWidth + 1.2} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(esDirigido || arista.dirigida) ? `url(#arrow-op)` : undefined} />
                   <text x={pesoX} y={pesoY} fill="#283b42" fontSize="11" fontWeight="bold" textAnchor="middle" dy="0.3em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
                 </g>
               );
@@ -928,7 +990,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
             return (
               <g key={arista.id}>
                 <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d={path} stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <path d={path} stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(esDirigido || arista.dirigida) ? `url(#arrow-op)` : undefined} />
                 <text x={pesoX} y={pesoY} fill="#283b42" fontSize="12" fontWeight="bold" textAnchor="middle" dy="0.35em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
               </g>
             );
@@ -1027,7 +1089,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
               gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: "12px",
               maxHeight: "400px",
-              overflowY: "auto",
+              overflowY: "visible",
               padding: "10px"
             }}>
             {vertices.map((v, i) => (
@@ -1072,7 +1134,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
                   ? "Seleccione el par de vértices origen y destino para establecer una arista" 
                   : `Vértice ${vertices[primeraArista]?.etiqueta || `V${primeraArista}`} tendrá adyacencia con: seleccione el destino`}
               </p>
-              <div style={{ position: "relative", maxHeight: "440px", overflowY: "auto", overflowX: "auto" }}>
+              <div style={{ position: "relative", maxHeight: "440px", overflowY: "visible", overflowX: "visible" }}>
                 <svg width="520" height="420" style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: "#e7f0ee" }}>
                   {Array.from(gruposAristas.entries()).map(([key, grupo]) => {
                     const groupSize = grupo.length;
@@ -1182,7 +1244,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
             <div style={{ width: "260px" }}>
               
               <p style={{ color: "#283b42", fontWeight: "bold", marginBottom: "10px" }}>Aristas ({aristas.length}):</p>
-              <div className="bloque" style={{ maxHeight: "320px", overflowY: "auto", backgroundColor: "#e7f0ee" }}>
+              <div className="bloque" style={{ maxHeight: "320px", overflowY: "visible", backgroundColor: "#e7f0ee" }}>
                 {aristas.length === 0 ? (
                   <p style={{ color: "#666", fontSize: "0.9rem" }}>Ninguna aún</p>
                 ) : (
@@ -1208,7 +1270,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '10px 0 12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
               {/* Operaciones con Vértices */}
               <button className="boton" onClick={handleInsertVertice} style={{ padding: '6px 10px' }}>➕ Insertar vértice</button>
               <button className="boton" onClick={() => { setDeletingVertexMode(true); setMergeSelection([]); setMergingMode(false); setContractingMode(false); alert('Seleccione el vértice que desea eliminar y confirme.'); }} style={{ padding: '6px 10px' }} disabled={vertices.length===0}>🗑 Eliminar vértice</button>
@@ -1222,7 +1284,7 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
               ))}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
               {/* Operaciones con Aristas */}
               <button className="boton" onClick={() => { setDeletingEdgeMode(true); setMergeSelection([]); setMergingMode(false); setContractingMode(false); alert('Seleccione la arista que desea eliminar y confirme.'); }} style={{ padding: '6px 10px' }} disabled={aristas.length===0}>🗑 Eliminar arista</button>
               {mode !== 'tree' && (!contractingMode ? (
@@ -1263,10 +1325,10 @@ function OperacionesGrafos({ onBack, mode = 'graph', initialDirected = false, in
               </div>
 
               {/* Fila 2: los otros tres botones centrados debajo */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                 {((grafoActual === 1 && (grafo1 || vertices.length > 0)) || (grafoActual === 2 && (grafo2 || vertices.length > 0))) && (
                   <button onClick={() => { persistCurrentToMemory(); setFase("operaciones"); }} className="boton boton_agregar" style={{ padding: '8px 10px', minWidth: '170px' }}>
-                     Ir a la construcción de árboles
+                     Añadir este grafo para operar
                   </button>
                 )}
                 {((grafoActual === 1 && grafo1) || (grafoActual === 2 && grafo2)) && (

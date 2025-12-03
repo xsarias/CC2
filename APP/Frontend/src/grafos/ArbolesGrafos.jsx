@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import "./OperacionesGrafos.css";
 
 function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initialGraph = null, backLabel = null }) {
@@ -26,23 +26,37 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
   const [grafoNombre, setGrafoNombre] = useState("");
   const [crearDesdeOperacion, setCrearDesdeOperacion] = useState(false);
   const inputGrafoRef = useRef(null);
-  const [operacion, setOperacion] = useState("");
+  const [treeType, setTreeType] = useState('min'); // 'min' or 'max'
+  const [tComplement, setTComplement] = useState(null); // { vertices, aristas }
   const [resultado, setResultado] = useState(null); // {vertices, aristas}
+  // Results for both min and max spanning trees and related metadata
+  const [minResultado, setMinResultado] = useState(null);
+  const [maxResultado, setMaxResultado] = useState(null);
+  const [minComplement, setMinComplement] = useState(null);
+  const [maxComplement, setMaxComplement] = useState(null);
+  const [minCenter, setMinCenter] = useState([]);
+  const [maxCenter, setMaxCenter] = useState([]);
+  const [minBicenterEdgeId, setMinBicenterEdgeId] = useState(null);
+  const [maxBicenterEdgeId, setMaxBicenterEdgeId] = useState(null);
+  // Metrics & table state
+  const [distMatrix, setDistMatrix] = useState(null);
+  const [pathMatrix, setPathMatrix] = useState(null);
+  const [eccArray, setEccArray] = useState([]);
+  const [sumDistances, setSumDistances] = useState([]);
+  const [radiusVal, setRadiusVal] = useState(null);
+  const [diameterVal, setDiameterVal] = useState(null);
+  const [medianVerts, setMedianVerts] = useState([]);
+  const [diameterPairs, setDiameterPairs] = useState([]);
+  const [highlightMetric, setHighlightMetric] = useState('none'); // 'none'|'radius'|'diameter'|'median'
 
-  const gruposAristas = useMemo(() => {
-    const map = new Map();
-    for (const a of aristas) {
-      const k1 = `${a.origen}-${a.destino}`;
-      const k2 = `${a.destino}-${a.origen}`;
-      const key = a.origen <= a.destino ? k1 : k2;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(a);
-    }
-    return map;
-  }, [aristas]);
+  useEffect(()=>{
+    try{ console.log('ArbolesGrafos mounted, fase=', fase); }catch(e){}
+  }, [fase]);
 
+  // --- Creation and editing helpers (copied/adapted) ---
   const handleCrearVertices = () => {
     const n = Math.max(1, Math.min(12, parseInt(numVertices) || 1));
+    try { console.log('handleCrearVertices called, n=', n, 'metodoAsignacion=', metodoAsignacion, 'tipoIdentificador=', tipoIdentificador); } catch(e){}
     const width = 520;
     const height = 420;
     const paddingX = 40;
@@ -62,45 +76,31 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     if (metodoAsignacion === "automatico") {
       const etiquetados = nuevos.map((v, i) => ({
         ...v,
-        etiqueta:
-          tipoIdentificador === "numerico"
-            ? String(i + 1)
-            : String.fromCharCode(65 + (i % 26)),
+        etiqueta: tipoIdentificador === "numerico" ? String(i + 1) : String.fromCharCode(65 + (i % 26)),
       }));
       setVertices(etiquetados);
+      try { console.log('setVertices done, count=', etiquetados.length); } catch(e){}
       setFase("grafo");
     } else {
       setVertices(nuevos);
+      try { console.log('setVertices (manual) done, count=', nuevos.length); } catch(e){}
       setFase("etiquetar");
     }
   };
 
   const handleConfirmarEtiquetas = () => {
-    const etiquetas = vertices.map(v => v.etiqueta.trim());
-    if (etiquetas.some(e => e === "")) {
-      alert("Todas las etiquetas deben estar completas");
-      return;
-    }
+    const etiquetas = vertices.map(v => (v.etiqueta || '').trim());
+    if (etiquetas.some(e => e === "")) { alert("Todas las etiquetas deben estar completas"); return; }
     const uniqueLabels = new Set(etiquetas);
-    if (uniqueLabels.size !== etiquetas.length) {
-      alert("Las etiquetas deben ser \u00fanicas");
-      return;
-    }
+    if (uniqueLabels.size !== etiquetas.length) { alert("Las etiquetas deben ser únicas"); return; }
     if (tipoIdentificador === "numerico") {
-      if (etiquetas.some(e => !/^[0-9]+$/.test(e))) {
-        alert("Todas las etiquetas deben ser n\u00fameros");
-        return;
-      }
+      if (etiquetas.some(e => !/^[0-9]+$/.test(e))) { alert("Todas las etiquetas deben ser números"); return; }
     } else {
-      if (etiquetas.some(e => !/^[A-Za-z]+$/.test(e))) {
-        alert("Todas las etiquetas deben ser letras");
-        return;
-      }
+      if (etiquetas.some(e => !/^[A-Za-z]+$/.test(e))) { alert("Todas las etiquetas deben ser letras"); return; }
     }
     setFase("grafo");
   };
 
-  // handle click by vertex index (not by internal id) so edges reference array indices
   const handleClickVertice = (index) => {
     if (primeraArista === null) {
       setPrimeraArista(index);
@@ -111,31 +111,11 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     }
   };
 
-  // Editar etiqueta de un vértice (prompt simple). Valida unicidad y tipo según `tipoIdentificador`.
   const handleEditarEtiquetaPrompt = (vertexId) => {
     const idx = vertices.findIndex(v => v.id === vertexId);
     if (idx === -1) return;
     const current = (vertices[idx].etiqueta || `V${vertexId}`);
     const respuesta = window.prompt(`Editar etiqueta del vértice:`, current);
-    if (respuesta === null) return; // cancel
-    const nuevo = String(respuesta).trim();
-    if (nuevo === "") { alert("La etiqueta no puede quedar vacía"); return; }
-    // Tipo de validación
-    if (tipoIdentificador === "numerico") {
-      if (!/^[0-9]+$/.test(nuevo)) { alert("Cuando el tipo es numérico, sólo se permiten números"); return; }
-    } else if (tipoIdentificador === "alfabetico") {
-      if (!/^[A-Za-z]+$/.test(nuevo)) { alert("Cuando el tipo es alfabético, sólo se permiten letras"); return; }
-    }
-    // Unicidad
-    const dup = vertices.some((v, i) => i !== idx && String((v.etiqueta||"").trim()) === nuevo);
-    if (dup) { alert("La etiqueta ya existe. Debe ser única"); return; }
-    const newVerts = vertices.map((v, i) => (i === idx ? { ...v, etiqueta: nuevo } : v));
-    setVertices(newVerts);
-  };
-
-  // Insertar un nuevo vértice manualmente (prompt para etiqueta)
-  const handleInsertVertice = () => {
-    const respuesta = window.prompt("Ingrese etiqueta para el nuevo vértice:", "");
     if (respuesta === null) return;
     const nuevo = String(respuesta).trim();
     if (nuevo === "") { alert("La etiqueta no puede quedar vacía"); return; }
@@ -144,61 +124,52 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     } else if (tipoIdentificador === "alfabetico") {
       if (!/^[A-Za-z]+$/.test(nuevo)) { alert("Cuando el tipo es alfabético, sólo se permiten letras"); return; }
     }
+    const dup = vertices.some((v, i) => i !== idx && String((v.etiqueta||"").trim()) === nuevo);
+    if (dup) { alert("La etiqueta ya existe. Debe ser única"); return; }
+    const newVerts = vertices.map((v, i) => (i === idx ? { ...v, etiqueta: nuevo } : v));
+    setVertices(newVerts);
+  };
+
+  const handleInsertVertice = () => {
+    const respuesta = window.prompt("Ingrese etiqueta para el nuevo vértice:", "");
+    if (respuesta === null) return;
+    const nuevo = String(respuesta).trim();
+    if (nuevo === "") { alert("La etiqueta no puede quedar vacía"); return; }
+    if (tipoIdentificador === 'numerico') {
+      if (!/^[0-9]+$/.test(nuevo)) { alert('Cuando el tipo es numérico, sólo se permiten números'); return; }
+    } else if (tipoIdentificador === 'alfabetico') {
+      if (!/^[A-Za-z]+$/.test(nuevo)) { alert('Cuando el tipo es alfabético, sólo se permiten letras'); return; }
+    }
     const dup = vertices.some((v) => String((v.etiqueta||"").trim()) === nuevo);
     if (dup) { alert("La etiqueta ya existe. Debe ser única"); return; }
-    // Buscar una posición libre que no colisione con vértices existentes
     const findFreePosition = (existing, width = 520, height = 420, minDist = 50) => {
-      const paddingX = 40;
-      const paddingY = 60;
-      const maxTries = 200;
+      const paddingX = 40; const paddingY = 60; const maxTries = 200;
       for (let t = 0; t < maxTries; t++) {
         const x = Math.round(paddingX + Math.random() * (width - 2 * paddingX));
         const y = Math.round(paddingY + Math.random() * (height - 2 * paddingY));
         let ok = true;
         for (const v of existing) {
-          const dx = (v.x || 0) - x;
-          const dy = (v.y || 0) - y;
+          const dx = (v.x || 0) - x; const dy = (v.y || 0) - y;
           if (Math.hypot(dx, dy) < minDist) { ok = false; break; }
         }
         if (ok) return { x, y };
       }
-      // fallback spiral around center
-      const cx = Math.round(width / 2);
-      const cy = Math.round(height / 2);
-      for (let r = 40; r < Math.max(width, height); r += 30) {
-        for (let a = 0; a < 360; a += 30) {
-          const rad = (a * Math.PI) / 180;
-          const x = Math.round(cx + r * Math.cos(rad));
-          const y = Math.round(cy + r * Math.sin(rad));
-          let ok = true;
-          for (const v of existing) {
-            const dx = (v.x || 0) - x;
-            const dy = (v.y || 0) - y;
-            if (Math.hypot(dx, dy) < minDist) { ok = false; break; }
-          }
-          if (ok) return { x, y };
-        }
-      }
-      return { x: Math.round(width/2), y: Math.round(height/2) };
+      const cx = Math.round(width / 2); const cy = Math.round(height / 2);
+      return { x: cx, y: cy };
     };
-
     const { x, y } = findFreePosition(vertices, 520, 420, 50);
     const newV = { id: Date.now() + Math.random(), x, y, etiqueta: nuevo };
     setVertices(prev => [...prev, newV]);
   };
 
-
-  // click while in delete-vertex mode
   const handleVertexDeleteClick = (index) => {
     const v = vertices[index];
     const label = v ? (v.etiqueta || `V${v.id}`) : `V${index}`;
     const ok = window.confirm(`¿Eliminar vértice ${label}?`);
     if (!ok) { setDeletingVertexMode(false); return; }
-    // perform deletion similar to previous logic
     const idxToRemove = index;
     const newVertices = vertices.filter((_, i) => i !== idxToRemove);
-    const mapping = {};
-    let newIdx = 0;
+    const mapping = {}; let newIdx = 0;
     for (let i = 0; i < vertices.length; i++) {
       if (i === idxToRemove) { mapping[i] = undefined; continue; }
       mapping[i] = newIdx++;
@@ -206,6 +177,9 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     const newAristas = aristas.map(a => ({ ...a })).filter(a => mapping[a.origen] !== undefined && mapping[a.destino] !== undefined).map(a => ({ ...a, origen: mapping[a.origen], destino: mapping[a.destino] }));
     setVertices(newVertices);
     setAristas(newAristas);
+    setMergeSelection([]);
+    setMergingMode(false);
+    setContractingMode(false);
     setDeletingVertexMode(false);
   };
 
@@ -220,35 +194,6 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     setDeletingEdgeMode(false);
   };
 
-  // (Eliminaciones ahora dirigidas por los handlers de modo de eliminación)
-
-  
-
-  // Agregar arista manual seleccionando origen/destino y peso
-  const handleAddAristaManual = () => {
-    if (selectOrigen === null || selectDestino === null) { alert('Seleccione origen y destino'); return; }
-    const o = parseInt(selectOrigen, 10);
-    const d = parseInt(selectDestino, 10);
-    if (isNaN(o) || isNaN(d) || o < 0 || d < 0 || o >= vertices.length || d >= vertices.length) { alert('Índices inválidos'); return; }
-    let peso;
-    const raw = pesoManual;
-    if (raw === null || raw === undefined || String(raw).trim() === "") {
-      peso = 1;
-    } else if (/^\d+$/.test(String(raw).trim())) {
-      peso = Math.max(1, parseInt(String(raw).trim()));
-    } else {
-      peso = String(raw).trim();
-    }
-    // If vertex labels are numeric, edge weights should be alphabetic
-    if (tipoIdentificador === 'numerico') {
-      peso = coerceEdgeWeightToAlpha(peso);
-    }
-    const nueva = { id: Date.now() + Math.random(), origen: o, destino: d, peso, dirigida: !!esDirigido };
-    setAristas(prev => [...prev, nueva]);
-    // reset selections
-    setSelectOrigen(null); setSelectDestino(null); setPesoManual(getDefaultEdgeWeight());
-  };
-
   const handleConfirmarArista = () => {
     if (!modalArista) return;
     let peso;
@@ -260,229 +205,30 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     } else {
       peso = String(raw).trim();
     }
-    // If vertex labels are numeric, convert edge weight to alphabetic
-    if (tipoIdentificador === 'numerico') {
-      peso = coerceEdgeWeightToAlpha(peso);
-    }
-    const nueva = {
-      id: Date.now() + Math.random(),
-      origen: modalArista.origen,
-      destino: modalArista.destino,
-      peso,
-      dirigida: !!esDirigido,
-    };
+    const nueva = { id: Date.now() + Math.random(), origen: modalArista.origen, destino: modalArista.destino, peso, dirigida: !!esDirigido };
     setAristas((prev) => [...prev, nueva]);
     setModalArista(null);
   };
 
-  // keep manual peso default in sync when tipoIdentificador changes
-  useEffect(() => {
-    setPesoManual(getDefaultEdgeWeight());
-    // also update modal default if modal is open
-    if (modalArista) setPesoTemporal(getDefaultEdgeWeight());
-    // if parent changed initialDirected, sync
-    setEsDirigido(!!initialDirected);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tipoIdentificador]);
-
-  // If parent provided an initialGraph (e.g., opening from Arboles view), initialize states
-  useEffect(() => {
-    if (initialGraph && typeof initialGraph === 'object') {
-      try {
-        const vs = initialGraph.vertices || [];
-        const as = initialGraph.aristas || [];
-        setVertices(Array.isArray(vs) ? vs : []);
-        setAristas(Array.isArray(as) ? as : []);
-        setGrafoNombre(initialGraph.nombre || '');
-        setFase('grafo');
-      } catch (e) {
-        // ignore malformed
-      }
+  const gruposAristas = useMemo(() => {
+    const map = new Map();
+    for (const a of aristas) {
+      const k1 = `${a.origen}-${a.destino}`;
+      const k2 = `${a.destino}-${a.origen}`;
+      const key = a.origen <= a.destino ? k1 : k2;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(a);
     }
-  }, [initialGraph]);
-
-  const handleEliminarArista = (id) => {
-    setAristas((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleGuardarGrafo = () => {
-    let nombre = (grafoNombre && grafoNombre.trim()) || "";
-    if (!nombre) {
-      const respuesta = window.prompt(`Ingrese nombre para el grafo ${grafoActual}:`, `Grafo ${grafoActual}`);
-      if (respuesta === null) return; // usuario canceló
-      nombre = respuesta.trim() || `Grafo ${grafoActual}`;
-      setGrafoNombre(nombre);
-    }
-    const grafoData = { vertices, aristas, nombre };
-    // persistir en memoria
-    if (grafoActual === 1) {
-      setGrafo1(grafoData);
-      alert(`Grafo 1 guardado correctamente como '${nombre}'`);
-    } else {
-      setGrafo2(grafoData);
-      alert(`Grafo 2 guardado correctamente como '${nombre}'`);
-    }
-    // Descargar JSON inmediatamente al guardar — usar mismo esquema que el botón Exportar
-    const exportObj = {
-      nombre: grafoData.nombre,
-      numVertices: (grafoData.vertices || []).length,
-      tipoIdentificador,
-      metodoAsignacion,
-      vertices: grafoData.vertices,
-      aristas: grafoData.aristas
-    };
-    exportGrafoObject(exportObj);
-    // If this creation started from operations, return to operations view
-    if (crearDesdeOperacion) {
-      setCrearDesdeOperacion(false);
-      setFase("operaciones");
-    }
-  };
-
-  const persistCurrentToMemory = () => {
-    // Guarda el grafo actual en grafo1/grafo2 sin descargar ni pedir nombre
-    const nombre = (grafoNombre && grafoNombre.trim()) || `Grafo ${grafoActual}`;
-    const grafoData = { vertices, aristas, nombre };
-    if (grafoActual === 1) {
-      setGrafo1(grafoData);
-    } else {
-      setGrafo2(grafoData);
-    }
-  };
-
-  const handleExportarJSON = () => {
-    // prefer saved object if present
-    const saved = grafoActual === 1 ? grafo1 : grafo2;
-    const source = saved || { vertices, aristas, nombre: grafoNombre };
-    exportGrafoObject({
-      nombre: source.nombre || `grafo${grafoActual}`,
-      numVertices: (source.vertices || []).length,
-      tipoIdentificador,
-      metodoAsignacion,
-      vertices: source.vertices || [],
-      aristas: source.aristas || []
-    });
-  };
-
-  const exportGrafoObject = (grafoObj) => {
-    const grafoData = grafoObj || { nombre: grafoNombre, vertices, aristas };
-    const dataStr = JSON.stringify(grafoData, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    const fname = (grafoData.nombre || `grafo`).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
-    link.download = `${fname}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleCargarJSON = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (!data.vertices || !data.aristas) {
-          alert("Formato de JSON inv\u00e1lido");
-          return;
-        }
-        setNumVertices(data.numVertices || data.vertices.length);
-        setTipoIdentificador(data.tipoIdentificador || "numerico");
-        setMetodoAsignacion(data.metodoAsignacion || "automatico");
-        // If loading from operations panel, persist directly into that slot.
-        // Prefer explicit dataset.target set on the hidden input (safer than relying on state timing).
-        const targetFromInput = event.target && event.target.dataset && event.target.dataset.target ? parseInt(event.target.dataset.target) : null;
-        if (fase === "operaciones") {
-          const target = targetFromInput || grafoActual || 1;
-          const nombre = data.nombre || `Grafo ${target}`;
-          const grafoData = { vertices: data.vertices, aristas: data.aristas, nombre };
-          if (target === 1) setGrafo1(grafoData);
-          else setGrafo2(grafoData);
-          alert(`Grafo cargado en Grafo ${target}`);
-          // clear dataset target
-          if (event.target && event.target.dataset) delete event.target.dataset.target;
-          return;
-        }
-        setVertices(data.vertices);
-        setAristas(data.aristas);
-        setGrafoNombre(data.nombre || "");
-        setFase("grafo");
-        alert(`Grafo cargado en Grafo ${grafoActual}`);
-      } catch (error) {
-        alert("Error al cargar el archivo JSON");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleStartCreateGraph = (n) => {
-    setGrafoActual(n);
-    setVertices([]);
-    setAristas([]);
-    setGrafoNombre("");
-    setCrearDesdeOperacion(true);
-    setFase("crear");
-  };
-
-  const handleEditarGrafo = (n) => {
-    setGrafoActual(n);
-    const saved = n === 1 ? grafo1 : grafo2;
-    if (saved) {
-      setVertices(saved.vertices || []);
-      setAristas(saved.aristas || []);
-      setGrafoNombre(saved.nombre || `Grafo ${n}`);
-    } else {
-      setVertices([]);
-      setAristas([]);
-      setGrafoNombre(`Grafo ${n}`);
-    }
-    setCrearDesdeOperacion(true);
-    setPrimeraArista(null);
-    setFase("grafo");
-  };
-
-  const handleUploadTo = (n) => {
-    setGrafoActual(n);
-    if (inputGrafoRef.current) {
-      try { inputGrafoRef.current.dataset.target = String(n); } catch (e) {}
-      inputGrafoRef.current.click();
-    }
-  };
-
-  const handleCrearOtroGrafo = () => {
-    // Guardar en memoria sin forzar descarga
-    persistCurrentToMemory();
-    const nuevoNumero = grafoActual === 1 ? 2 : 1;
-    setGrafoActual(nuevoNumero);
-    setFase("crear");
-    setVertices([]);
-    setAristas([]);
-    setPrimeraArista(null);
-    setIndiceActual(0);
-    setEtiquetaActual("");
-    setGrafoNombre("");
-  };
-
-  const handleReiniciar = () => {
-    setFase("menu");
-    setVertices([]);
-    setAristas([]);
-    setPrimeraArista(null);
-    setIndiceActual(0);
-    setEtiquetaActual("");
-    setGrafoNombre("");
-  };
-
-  const handleRealizarOperaciones = () => {
-    // Persistir el grafo actual si aún no está guardado y pasar a vista de operaciones
-    const current = { vertices, aristas };
-    if (grafoActual === 1 && !grafo1 && vertices.length > 0) setGrafo1(current);
-    if (grafoActual === 2 && !grafo2 && vertices.length > 0) setGrafo2(current);
-    setFase("operaciones");
+    return map;
+  }, [aristas]);
+  const handleVaciarGrafoGuardado = (n) => {
+    const ok = window.confirm(`¿Vaciar el Grafo ${n} guardado? Esta acción eliminará el grafo ${n} de la memoria.`);
+    if (!ok) return;
+    if (n === 1) setGrafo1(null);
+    if (n === 2) setGrafo2(null);
+    // si el resultado depende de ambos, limpiarlo
+    setResultado(null);
+    alert(`Grafo ${n} eliminado de la memoria.`);
   };
 
   const handleVaciarGrafoActual = () => {
@@ -493,17 +239,8 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     setGrafoNombre("");
     setPrimeraArista(null);
     setModalArista(null);
-    alert("Grafo actual vaciado.");
-  };
-
-  const handleVaciarGrafoGuardado = (n) => {
-    const ok = window.confirm(`¿Vaciar el Grafo ${n} guardado? Esta acción eliminará el grafo ${n} de la memoria.`);
-    if (!ok) return;
-    if (n === 1) setGrafo1(null);
-    if (n === 2) setGrafo2(null);
-    // si el resultado depende de ambos, limpiarlo
     setResultado(null);
-    alert(`Grafo ${n} eliminado de la memoria.`);
+    alert("Grafo actual vaciado.");
   };
 
   const distancePointToSegment = (px, py, x1, y1, x2, y2) => {
@@ -516,6 +253,14 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     const cx = x1 + t * dx;
     const cy = y1 + t * dy;
     return Math.hypot(px - cx, py - cy);
+  };
+
+  // Helper: point on circle border from center (cx,cy) towards (tx,ty)
+  const pointOnCircle = (cx, cy, r, tx, ty) => {
+    const dx = tx - cx;
+    const dy = ty - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    return { x: cx + (dx / d) * r, y: cy + (dy / d) * r };
   };
 
   // Helpers para tipos y combinación de pesos
@@ -561,6 +306,17 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
   // Helpers para coerción de pesos según tipo de etiquetas de vértices
   const isLabelAlpha = (label) => typeof label === 'string' && /^[A-Za-z]+$/.test(label);
   const isLabelNumeric = (label) => typeof label === 'string' && /^\d+$/.test(label);
+
+  const pairLabel = (a, b) => {
+    if (isLabelNumeric(String(a)) && isLabelNumeric(String(b))) return `${a},${b}`;
+    return `${a}${b}`;
+  };
+
+  const fmtValue = (v) => {
+    if (v === null || v === undefined) return '∅';
+    if (!isFinite(v)) return '∞';
+    return v;
+  };
 
   const letterToNumber = (s) => {
     if (!s) return 0;
@@ -631,18 +387,12 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     const labelType = (hasAlpha && !hasNum) ? 'alpha' : (hasNum && !hasAlpha) ? 'numeric' : 'mixed';
 
     const coercedAristas = aristas.map(a => ({ ...a }));
-    for (const a of coercedAristas) {
-      if (labelType === 'alpha') {
-        // vertices are letters -> weights numeric
-        a.peso = coerceEdgeWeightToNumeric(a.peso);
-      } else if (labelType === 'numeric') {
-        // vertices numeric -> weights letters
-        a.peso = coerceEdgeWeightToAlpha(a.peso);
-      } else {
-        // mixed: leave as is
-      }
+    // If vertices already have numeric x/y coordinates (were created by the user),
+    // preserve that layout so the tree appears in the same positions as the original graph.
+    const needsLayout = (vertices || []).some(v => typeof v.x !== 'number' || typeof v.y !== 'number');
+    if (needsLayout) {
+      layoutCircular(vertices, 520, 420);
     }
-    layoutCircular(vertices, 520, 420);
     setResultado({ vertices, aristas: coercedAristas });
   };
 
@@ -651,7 +401,7 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
   const hasG2 = !!grafo2 || (grafoActual === 2 && vertices.length > 0);
 
   // Render utilitario para grafo (solo visualización, sin interacción)
-  const renderGraph = (vs = [], es = [], small = false, directed = false) => {
+  const renderGraph = (vs = [], es = [], small = false, directed = false, options = {}) => {
     const map = new Map();
     for (const a of es) {
       const k1 = `${a.origen}-${a.destino}`;
@@ -668,25 +418,33 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     const topY = small ? 70 : 90;
     const bottomY = small ? (height - 70) : (height - 90);
     
-    // Two-row layout for small graphs
+    // Two-row layout for small graphs, but preserve explicit positions when present
     let layoutVs = vs;
     if (small && vs.length > 0) {
-      layoutVs = vs.map((v, i) => {
-        const cols = Math.ceil(vs.length / 2);
-        const row = i < cols ? 0 : 1;
-        const col = row === 0 ? i : i - cols;
-        const spacingX = cols > 1 ? (width - 2 * paddingX) / (cols - 1) : 0;
-        return {
-          ...v,
-          x: paddingX + col * spacingX,
-          y: row === 0 ? topY : bottomY
-        };
-      });
+      const needsLayout = vs.some(v => typeof v.x !== 'number' || typeof v.y !== 'number');
+      if (needsLayout) {
+        layoutVs = vs.map((v, i) => {
+          const cols = Math.ceil(vs.length / 2);
+          const row = i < cols ? 0 : 1;
+          const col = row === 0 ? i : i - cols;
+          const spacingX = cols > 1 ? (width - 2 * paddingX) / (cols - 1) : 0;
+          return {
+            ...v,
+            x: paddingX + col * spacingX,
+            y: row === 0 ? topY : bottomY
+          };
+        });
+      } else {
+        // keep the provided coordinates but clone objects to avoid external mutation
+        layoutVs = vs.map(v => ({ ...v }));
+      }
     }
 
     const strokeColor = "#1d6a96";
     const bgColor = "#e7f0ee";
     const strokeWidth = 2;
+    const highlightNodeColor = options.highlightNodeColor || '#d13b3b';
+    const highlightEdgeColor = options.highlightEdgeColor || '#d13b3b';
 
     const markerId = `arrow-${small ? 'small' : 'big'}`;
     return (
@@ -695,8 +453,12 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
           <marker id={markerId} viewBox="0 0 10 10" refX={small ? 7 : 12} refY="5" markerWidth={small ? 6 : 10} markerHeight={small ? 6 : 10} orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill={strokeColor} />
           </marker>
+          {/* even smaller marker for self-loops to keep arrowheads subtle */}
+          <marker id={`${markerId}-loop`} viewBox="0 0 10 10" refX={small ? 4 : 4} refY="5" markerWidth={small ? 4 : 4} markerHeight={small ? 4 : 4} markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+            <path d="M 0 0 L 4 5 L 0 10 z" fill={strokeColor} />
+          </marker>
         </defs>
-        {grupos.map(([key, grupo]) => {
+                {grupos.map(([key, grupo]) => {
           const groupSize = grupo.length;
           const midIndex = (groupSize - 1) / 2;
           const ordered = grupo.map((a, i) => ({ a, i })).sort((p, q) => Math.abs(q.i - midIndex) - Math.abs(p.i - midIndex));
@@ -705,26 +467,34 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
             const v2 = layoutVs[arista.destino];
             if (!v1 || !v2) return null;
 
-              if (v1.id === v2.id) {
-              const x = v1.x;
-              const y = v1.y;
-              const rx = 26 + idx * 6;
-              const ry = 26 + idx * 6;
-              const offset = 26 + idx * 12;
-              const path = `M ${x} ${y - ry} C ${x + offset} ${y - ry - offset}, ${x + rx + offset} ${y + ry - offset}, ${x} ${y + ry}`;
-              const pesoX = x + rx + offset * 0.7;
-              const pesoY = y - ry - offset * 0.5;
-                  return (
-                <g key={arista.id}>
-                  <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  <path d={path} stroke={strokeColor} strokeWidth={strokeWidth + 1.2} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(directed || arista.dirigida) ? `url(#${markerId})` : undefined} />
-                  <text x={pesoX} y={pesoY} fill="#283b42" fontSize="11" fontWeight="bold" textAnchor="middle" dy="0.3em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
-                </g>
-              );
-            }
+              const edgeHighlighted = options.highlightEdges && options.highlightEdges.has(arista.id);
+              const edgeStrokeColor = edgeHighlighted ? highlightEdgeColor : strokeColor;
 
-            const x1 = v1.x; const y1 = v1.y;
-            const x2 = v2.x; const y2 = v2.y;
+              if (v1.id === v2.id) {
+                const x = v1.x;
+                const y = v1.y;
+                // enlarge self-loop to make it visible; spacing grows with index
+                const rx = 46 + idx * 10;
+                const ry = 42 + idx * 10;
+                const offset = 52 + idx * 14;
+                const path = `M ${x + 18} ${y} C ${x + offset} ${y - offset}, ${x + offset + rx} ${y + offset}, ${x + 18} ${y}`;
+                const pesoX = x + offset + rx * 0.25;
+                const pesoY = y - ry * 0.25;
+                return (
+                  <g key={arista.id} onClick={(e) => { if (deletingEdgeMode) { handleEdgeDeleteClick(arista); e.stopPropagation(); } }} style={{ cursor: deletingEdgeMode ? 'pointer' : 'default' }}>
+                    <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <path d={path} stroke={edgeStrokeColor} strokeWidth={edgeHighlighted ? strokeWidth + 2 : strokeWidth + 1.2} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(directed || arista.dirigida) ? `url(#${markerId}-loop)` : undefined} />
+                    <text x={pesoX} y={pesoY} fill="#283b42" fontSize="12" fontWeight="bold" textAnchor="middle" dy="0.3em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
+                  </g>
+                );
+              }
+
+            // compute endpoints on vertex circle borders so arrows touch node edges
+            const R = 22; // vertex radius
+            const p1 = pointOnCircle(v1.x, v1.y, R, v2.x, v2.y);
+            const p2 = pointOnCircle(v2.x, v2.y, R, v1.x, v1.y);
+            const x1 = p1.x; const y1 = p1.y;
+            const x2 = p2.x; const y2 = p2.y;
             const mx = (x1 + x2) / 2; const my = (y1 + y2) / 2;
             const dx = x2 - x1; const dy = y2 - y1;
             const len = Math.hypot(dx, dy) || 1;
@@ -754,19 +524,46 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
             return (
               <g key={arista.id}>
                 <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <path d={path} stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(directed || arista.dirigida) ? `url(#${markerId})` : undefined} />
+                <path d={path} stroke={edgeStrokeColor} strokeWidth={edgeHighlighted ? strokeWidth + 2 : strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 <text x={pesoX} y={pesoY} fill="#283b42" fontSize="12" fontWeight="bold" textAnchor="middle" dy="0.35em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
               </g>
             );
           });
         })}
 
-        {layoutVs.map((v) => (
-          <g key={`v-op-${v.id}`}>
-            <circle cx={v.x} cy={v.y} r="22" fill="#1d6a96" stroke="#283b42" strokeWidth="2" />
-            <text x={v.x} y={v.y} textAnchor="middle" dy="0.3em" fill="white" fontSize="13" fontWeight="bold" pointerEvents="none">{v.etiqueta || `V${v.id}`}</text>
-          </g>
-        ))}
+        {layoutVs.map((v, idx) => {
+          const nodeHighlighted = options.highlightNodes && (options.highlightNodes.has(v.id) || options.highlightNodes.has(String(v.etiqueta)));
+          const fillColorNode = nodeHighlighted ? highlightNodeColor : "#1d6a96";
+          return (
+            <g key={`v-op-${v.id}`}>
+              <circle cx={v.x} cy={v.y} r="22" fill={fillColorNode} stroke="#283b42" strokeWidth="2" />
+              <text x={v.x} y={v.y} textAnchor="middle" dy="0.3em" fill="white" fontSize="13" fontWeight="bold" pointerEvents="none">{v.etiqueta || `V${v.id}`}</text>
+            </g>
+          );
+        })}
+                {/* overlay small lines with markerEnd so arrowheads render above nodes (include self-loops) */}
+        {es && es.length > 0 && es.map((a) => {
+          const directedEdge = directed || a.dirigida;
+          if (!directedEdge) return null;
+          const sv = layoutVs[a.origen];
+          const tv = layoutVs[a.destino];
+          if (!sv || !tv) return null;
+          // self-loop: place marker near the right-side of the node
+          if (a.origen === a.destino) {
+            const p2 = pointOnCircle(tv.x, tv.y, 22, tv.x + 1, tv.y);
+            // push the start further back and slightly up so the arrowhead sits clearly outside the node
+            const sx = p2.x - 14;
+            const sy = p2.y - 6;
+            return (<path key={`mk-${a.id}`} d={`M ${sx} ${sy} L ${p2.x} ${p2.y}`} stroke="transparent" fill="none" markerEnd={`url(#${markerId}-loop)`}/>);
+          }
+          // normal directed edge
+          const p2 = pointOnCircle(tv.x, tv.y, 22, sv.x, sv.y);
+          const dx = tv.x - sv.x; const dy = tv.y - sv.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const sx = p2.x - (dx / len) * 8;
+          const sy = p2.y - (dy / len) * 8;
+          return (<path key={`mk-${a.id}`} d={`M ${sx} ${sy} L ${p2.x} ${p2.y}`} stroke="transparent" fill="none" markerEnd={`url(#${markerId})`} />);
+        })}
       </svg>
     );
   };
@@ -786,6 +583,563 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
     return nodes;
   };
 
+  // Compute a spanning tree (Kruskal) and the complement (edges not in the tree)
+  const computeSpanningTree = (vs, asEdges, minimize = true) => {
+    if (!vs || vs.length === 0) return { treeEdges: [], complementEdges: asEdges || [] };
+    const edges = (asEdges || []).map((a) => ({ ...a, weightNum: coerceEdgeWeightToNumeric(a.peso) }));
+    edges.sort((a, b) => (minimize ? a.weightNum - b.weightNum : b.weightNum - a.weightNum));
+    const parent = Array.from({ length: vs.length }, (_, i) => i);
+    const find = (x) => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+    const union = (a, b) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra === rb) return false;
+      parent[rb] = ra;
+      return true;
+    };
+    const treeEdges = [];
+    for (const e of edges) {
+      if (typeof e.origen !== 'number' || typeof e.destino !== 'number') continue;
+      if (e.origen < 0 || e.destino < 0 || e.origen >= vs.length || e.destino >= vs.length) continue;
+      if (union(e.origen, e.destino)) {
+        treeEdges.push(e);
+        if (treeEdges.length >= Math.max(0, vs.length - 1)) break;
+      }
+    }
+    const treeIds = new Set(treeEdges.map((x) => x.id));
+    const complementEdges = (asEdges || []).filter((a) => !treeIds.has(a.id));
+    return { treeEdges, complementEdges };
+  };
+
+  const visualizeTree = () => {
+    // choose current graph (grafoActual) by default
+    let vs = [];
+    let es = [];
+    if (grafoActual === 1) { vs = (grafo1 ? grafo1.vertices : vertices) || []; es = (grafo1 ? grafo1.aristas : aristas) || []; }
+    else { vs = (grafo2 ? grafo2.vertices : vertices) || []; es = (grafo2 ? grafo2.aristas : aristas) || []; }
+    if (!vs || vs.length === 0) { alert('El grafo seleccionado no tiene vértices'); return; }
+    // Use deep copies so layoutCircular and other mutations do not affect the original graph
+    const vsCopy = (vs || []).map(v => ({ ...(v || {}) }));
+    const esCopy = (es || []).map(a => ({ ...(a || {}) }));
+    const { treeEdges, complementEdges } = computeSpanningTree(vsCopy, esCopy, treeType === 'min');
+    // prepare tree edges array suitable for finalizeResultado (new objects)
+    const treeAs = treeEdges.map((e, i) => ({ id: `t-${i}-${e.id}`, origen: e.origen, destino: e.destino, peso: e.peso, dirigida: e.dirigida }));
+    finalizeResultado(vsCopy, treeAs);
+    setTComplement({ vertices: vsCopy.map(v => ({ ...v })), aristas: (complementEdges || []).map(a => ({ ...(a || {}) })) });
+  };
+
+  // Helper to return the currently active graph's vertices and aristas
+  const getCurrentGraph = () => {
+    if (grafoActual === 1) return { vs: (grafo1 ? grafo1.vertices : vertices) || [], es: (grafo1 ? grafo1.aristas : aristas) || [] };
+    return { vs: (grafo2 ? grafo2.vertices : vertices) || [], es: (grafo2 ? grafo2.aristas : aristas) || [] };
+  };
+
+  // Compute centers (or bicenter) of a tree by iterative leaf removal
+  const computeTreeCenter = (vs, asEdges) => {
+    const n = (vs || []).length;
+    if (n === 0) return { centers: [], bicenterEdgeId: null };
+    const adj = Array.from({ length: n }, () => []);
+    for (const e of (asEdges || [])) {
+      if (typeof e.origen === 'number' && typeof e.destino === 'number') {
+        adj[e.origen].push({ to: e.destino, id: e.id });
+        adj[e.destino].push({ to: e.origen, id: e.id });
+      }
+    }
+    const deg = adj.map(a => a.length);
+    const removed = new Array(n).fill(false);
+    let leaves = [];
+    for (let i = 0; i < n; i++) if (deg[i] <= 1) leaves.push(i);
+    let remaining = n;
+    while (remaining > 2 && leaves.length > 0) {
+      const nextLeaves = [];
+      for (const leaf of leaves) {
+        if (removed[leaf]) continue;
+        removed[leaf] = true;
+        remaining--;
+        for (const nb of adj[leaf]) {
+          if (removed[nb.to]) continue;
+          deg[nb.to]--;
+          if (deg[nb.to] === 1) nextLeaves.push(nb.to);
+        }
+      }
+      leaves = nextLeaves;
+    }
+    const centers = [];
+    for (let i = 0; i < n; i++) if (!removed[i]) centers.push(i);
+    if (centers.length === 0) centers.push(...leaves);
+    let bicenterEdgeId = null;
+    if (centers.length === 2) {
+      const [a, b] = centers;
+      for (const e of (asEdges || [])) {
+        if ((e.origen === a && e.destino === b) || (e.origen === b && e.destino === a)) { bicenterEdgeId = e.id; break; }
+      }
+    }
+    return { centers, bicenterEdgeId };
+  };
+
+  // Generate both min and max spanning trees, complements and centers; center the tree layouts for small view
+  const handleGenerarArboles = () => {
+    const { vs, es } = getCurrentGraph();
+    if (!vs || vs.length === 0) { alert('El grafo actual no tiene vértices'); return; }
+
+    const vsCopyBase = (vs || []).map(v => ({ ...(v || {}) }));
+    const esCopyBase = (es || []).map(a => ({ ...(a || {}) }));
+
+    // Min tree
+    const { treeEdges: minTreeEdges, complementEdges: minComplementEdges } = computeSpanningTree(vsCopyBase.map(v=>({...v})), esCopyBase.map(a=>({...a})), true);
+    const minVs = vsCopyBase.map(v => ({ ...v }));
+    const minAs = minTreeEdges.map((e, i) => ({ id: `min-t-${i}-${e.id}`, origen: e.origen, destino: e.destino, peso: e.peso, dirigida: e.dirigida }));
+    
+    setMinResultado({ vertices: minVs, aristas: minAs });
+    setMinComplement({ vertices: vsCopyBase.map(v=>({...v})), aristas: (minComplementEdges||[]).map(a=>({...a})) });
+    const minCenterRes = computeTreeCenter(minVs, minAs);
+    setMinCenter(minCenterRes.centers || []);
+    setMinBicenterEdgeId(minCenterRes.bicenterEdgeId ?? null);
+
+    // Max tree
+    const { treeEdges: maxTreeEdges, complementEdges: maxComplementEdges } = computeSpanningTree(vsCopyBase.map(v=>({...v})), esCopyBase.map(a=>({...a})), false);
+    const maxVs = vsCopyBase.map(v => ({ ...v }));
+    const maxAs = maxTreeEdges.map((e, i) => ({ id: `max-t-${i}-${e.id}`, origen: e.origen, destino: e.destino, peso: e.peso, dirigida: e.dirigida }));
+    
+    setMaxResultado({ vertices: maxVs, aristas: maxAs });
+    setMaxComplement({ vertices: vsCopyBase.map(v=>({...v})), aristas: (maxComplementEdges||[]).map(a=>({...a})) });
+    const maxCenterRes = computeTreeCenter(maxVs, maxAs);
+    setMaxCenter(maxCenterRes.centers || []);
+    setMaxBicenterEdgeId(maxCenterRes.bicenterEdgeId ?? null);
+
+    // For backward compatibility keep resultado pointing to minResultado
+    setResultado({ vertices: minVs, aristas: minAs });
+    setTComplement({ vertices: minVs.map(v=>({...v})), aristas: (minComplementEdges||[]).map(a=>({...a})) });
+  };
+
+  // --- Utilities copied/adapted from OperacionesGrafosClean for file upload/export/edit actions ---
+  const exportGrafoObject = (grafoObj) => {
+    const grafoData = grafoObj || { nombre: grafoNombre, vertices, aristas };
+    const dataStr = JSON.stringify(grafoData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const fname = (grafoData.nombre || `grafo`).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
+    link.download = `${fname}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCargarJSON = (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.vertices || !data.aristas) {
+          alert("Formato de JSON inválido");
+          return;
+        }
+        setNumVertices(data.numVertices || data.vertices.length);
+        setTipoIdentificador(data.tipoIdentificador || "numerico");
+        setMetodoAsignacion(data.metodoAsignacion || "automatico");
+        const targetFromInput = event.target && event.target.dataset && event.target.dataset.target ? parseInt(event.target.dataset.target) : null;
+        if (fase === "operaciones") {
+          const target = targetFromInput || grafoActual || 1;
+          const nombre = data.nombre || `Grafo ${target}`;
+          const grafoData = { vertices: data.vertices, aristas: data.aristas, nombre };
+          if (target === 1) setGrafo1(grafoData);
+          else setGrafo2(grafoData);
+          alert(`Grafo cargado en Grafo ${target}`);
+          if (event.target && event.target.dataset) delete event.target.dataset.target;
+          return;
+        }
+        setVertices(data.vertices);
+        setAristas(data.aristas);
+        setGrafoNombre(data.nombre || "");
+        setFase("grafo");
+        alert(`Grafo cargado en Grafo ${grafoActual}`);
+      } catch (error) {
+        alert("Error al cargar el archivo JSON");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleStartCreateGraph = (n) => {
+    setGrafoActual(n);
+    setVertices([]);
+    setAristas([]);
+    setGrafoNombre("");
+    setCrearDesdeOperacion(true);
+    setFase("crear");
+  };
+
+  const handleEditarGrafo = (n) => {
+    setGrafoActual(n);
+    const saved = n === 1 ? grafo1 : grafo2;
+    if (saved) {
+      setVertices(saved.vertices || []);
+      setAristas(saved.aristas || []);
+      setGrafoNombre(saved.nombre || `Grafo ${n}`);
+    } else {
+      setVertices([]);
+      setAristas([]);
+      setGrafoNombre(`Grafo ${n}`);
+    }
+    setCrearDesdeOperacion(true);
+    setPrimeraArista(null);
+    setFase("grafo");
+  };
+
+  const handleUploadTo = (n) => {
+    setGrafoActual(n);
+    if (inputGrafoRef.current) {
+      try { inputGrafoRef.current.dataset.target = String(n); } catch (e) { }
+      inputGrafoRef.current.click();
+    }
+  };
+
+  const handleGuardarGrafo = () => {
+    let nombre = (grafoNombre && grafoNombre.trim()) || "";
+    if (!nombre) {
+      const respuesta = window.prompt(`Ingrese nombre para el grafo ${grafoActual}:`, `Grafo ${grafoActual}`);
+      if (respuesta === null) return;
+      nombre = respuesta.trim() || `Grafo ${grafoActual}`;
+      setGrafoNombre(nombre);
+    }
+    const grafoData = { vertices, aristas, nombre };
+    if (grafoActual === 1) {
+      setGrafo1(grafoData);
+      alert(`Grafo 1 guardado correctamente como '${nombre}'`);
+    } else {
+      setGrafo2(grafoData);
+      alert(`Grafo 2 guardado correctamente como '${nombre}'`);
+    }
+    const exportObj = {
+      nombre: grafoData.nombre,
+      numVertices: (grafoData.vertices || []).length,
+      tipoIdentificador,
+      metodoAsignacion,
+      vertices: grafoData.vertices,
+      aristas: grafoData.aristas
+    };
+    exportGrafoObject(exportObj);
+    if (crearDesdeOperacion) {
+      setCrearDesdeOperacion(false);
+      setFase("operaciones");
+    }
+  };
+
+  const persistCurrentToMemory = () => {
+    const nombre = (grafoNombre && grafoNombre.trim()) || `Grafo ${grafoActual}`;
+    const grafoData = { vertices, aristas, nombre };
+    if (grafoActual === 1) {
+      setGrafo1(grafoData);
+    } else {
+      setGrafo2(grafoData);
+    }
+  };
+
+  // Al montar, recuperar grafos temporales desde localStorage si existen
+  // No localStorage syncing: graphs are isolated per-component (in-memory) by design.
+
+  // Precompute labels for T (vértices) and T (aristas) to avoid complex inline JSX expressions
+  const tVerticesLabels = (function(){
+    const vsSrc = resultado ? (resultado.vertices || []) : ((grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : [])) || []);
+    return (vsSrc || []).map(v => v?.etiqueta || `V${v?.id}`);
+  })();
+
+  const tAristasLabels = (function(){
+    if (resultado && resultado.aristas) {
+      return (resultado.aristas || []).map(a => {
+        const verts = resultado.vertices || [];
+        const v1 = verts[a.origen];
+        const v2 = verts[a.destino];
+        const l1 = v1 ? (v1.etiqueta || `V${v1.id}`) : `V${a.origen}`;
+        const l2 = v2 ? (v2.etiqueta || `V${v2.id}`) : `V${a.destino}`;
+        const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
+        return `${pairLabel(l1,l2)}${peso}`;
+      });
+    }
+    const asSrc = (grafo1 ? grafo1.aristas : (grafoActual === 1 ? aristas : [])) || [];
+    const vsForAs = (grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : [])) || [];
+    return (asSrc || []).map(a => {
+      const v1 = vsForAs[a.origen];
+      const v2 = vsForAs[a.destino];
+      const l1 = v1 ? (v1.etiqueta || `V${v1.id}`) : `V${a.origen}`;
+      const l2 = v2 ? (v2.etiqueta || `V${v2.id}`) : `V${a.destino}`;
+      const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
+      return `${pairLabel(l1,l2)}${peso}`;
+    });
+  })();
+
+  // Helper to format edge lists as sets with braces: {a b, b c, ...}
+  const formatEdgeList = (vs = [], asList = []) => {
+    if (!asList || asList.length === 0) return "{}";
+    const strs = (asList || []).map(a => {
+      const verts = vs || [];
+      const v1 = verts[a.origen];
+      const v2 = verts[a.destino];
+      const l1 = v1 ? (v1.etiqueta || `V${v1.id}`) : `V${a.origen}`;
+      const l2 = v2 ? (v2.etiqueta || `V${v2.id}`) : `V${a.destino}`;
+      const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
+      return `${pairLabel(l1,l2)}${peso}`;
+    });
+    return `{ ${strs.join(', ')} }`;
+  };
+
+  // Extract a small subgraph around the center nodes (within given depth)
+  const extractCenterSubgraph = (vs = [], asList = [], centers = [], depth = 1) => {
+    if (!vs || vs.length === 0 || !centers || centers.length === 0) return { vertices: [], aristas: [], centersMapped: [] };
+    const n = vs.length;
+    const adj = Array.from({ length: n }, () => []);
+    for (const e of (asList || [])) {
+      if (typeof e.origen === 'number' && typeof e.destino === 'number') {
+        adj[e.origen].push(e.destino);
+        adj[e.destino].push(e.origen);
+      }
+    }
+    const include = new Set();
+    const q = [];
+    for (const c of centers) {
+      if (c >= 0 && c < n && !include.has(c)) { include.add(c); q.push({ v: c, d: 0 }); }
+    }
+    while (q.length > 0) {
+      const cur = q.shift();
+      if (cur.d >= depth) continue;
+      for (const nb of adj[cur.v]) {
+        if (!include.has(nb)) { include.add(nb); q.push({ v: nb, d: cur.d + 1 }); }
+      }
+    }
+    const idxMap = {};
+    const newVs = [];
+    let ni = 0;
+    for (let i = 0; i < n; i++) {
+      if (include.has(i)) {
+        idxMap[i] = ni;
+        // preserve coordinates and etiqueta but reassign id to local index
+        const original = vs[i] || {};
+        newVs.push({ id: ni, x: original.x, y: original.y, etiqueta: original.etiqueta });
+        ni++;
+      }
+    }
+    const newAs = [];
+    for (const e of (asList || [])) {
+      if (idxMap[e.origen] !== undefined && idxMap[e.destino] !== undefined) {
+        newAs.push({ id: e.id, origen: idxMap[e.origen], destino: idxMap[e.destino], peso: e.peso, dirigida: e.dirigida });
+      }
+    }
+    const centersMapped = (centers || []).map(c => (idxMap[c] !== undefined ? idxMap[c] : -1)).filter(x => x >= 0);
+    return { vertices: newVs, aristas: newAs, centersMapped };
+  };
+
+  // Compute all-pairs shortest paths using Dijkstra (weights coerced to numeric)
+  // Returns { dmat, paths } where paths[s][t] is an array of vertex indices from s->t (inclusive)
+  const computeAllPairsPaths = (vs = [], asList = [], directed = false) => {
+    const n = (vs || []).length;
+    const INF = 1e12;
+    const adj = Array.from({ length: n }, () => []);
+    for (const e of (asList || [])) {
+      if (typeof e.origen !== 'number' || typeof e.destino !== 'number') continue;
+      const w = Math.max(0, coerceEdgeWeightToNumeric(e.peso) || 0);
+      adj[e.origen].push({ to: e.destino, w });
+      if (!directed) adj[e.destino].push({ to: e.origen, w });
+    }
+    const dmat = Array.from({ length: n }, () => Array.from({ length: n }, () => INF));
+    const paths = Array.from({ length: n }, () => Array.from({ length: n }, () => []));
+    for (let s = 0; s < n; s++) {
+      const dist = Array.from({ length: n }, () => INF);
+      const prev = Array.from({ length: n }, () => -1);
+      const used = Array.from({ length: n }, () => false);
+      dist[s] = 0;
+      for (let iter = 0; iter < n; iter++) {
+        let u = -1; let best = INF;
+        for (let i = 0; i < n; i++) if (!used[i] && dist[i] < best) { best = dist[i]; u = i; }
+        if (u === -1) break;
+        used[u] = true;
+        for (const nb of adj[u]) {
+          if (dist[nb.to] > dist[u] + nb.w) { dist[nb.to] = dist[u] + nb.w; prev[nb.to] = u; }
+        }
+      }
+      for (let t = 0; t < n; t++) {
+        dmat[s][t] = dist[t];
+        if (dist[t] < INF/2) {
+          // reconstruct path s->t via prev
+          const stack = [];
+          let cur = t;
+          while (cur !== -1) { stack.push(cur); if (cur === s) break; cur = prev[cur]; }
+          if (stack[stack.length-1] !== s) {
+            paths[s][t] = []; // unreachable
+          } else {
+            paths[s][t] = stack.reverse();
+          }
+        } else {
+          paths[s][t] = [];
+        }
+      }
+    }
+    return { dmat, paths };
+  };
+
+  // Compute all-pairs shortest paths using Floyd-Warshall algorithm
+  // Returns { dmat, next } where next[i][j] is the next node after i on a shortest path to j (or null if unreachable)
+  const computeFloyd = (vs = [], asList = [], directed = false) => {
+    const n = (vs || []).length;
+    const INF = 1e12;
+    const d = Array.from({ length: n }, () => Array.from({ length: n }, () => INF));
+    const next = Array.from({ length: n }, () => Array.from({ length: n }, () => null));
+    for (let i = 0; i < n; i++) { d[i][i] = 0; next[i][i] = i; }
+    for (const e of (asList || [])) {
+      if (typeof e.origen !== 'number' || typeof e.destino !== 'number') continue;
+      const u = e.origen; const v = e.destino;
+      const w = Math.max(0, coerceEdgeWeightToNumeric(e.peso) || 0);
+      if (d[u][v] > w) {
+        d[u][v] = w;
+        next[u][v] = v;
+      }
+      if (!directed) {
+        if (d[v][u] > w) {
+          d[v][u] = w;
+          next[v][u] = u;
+        }
+      }
+    }
+    // Floyd-Warshall
+    for (let k = 0; k < n; k++) {
+      for (let i = 0; i < n; i++) {
+        if (d[i][k] >= INF/2) continue;
+        for (let j = 0; j < n; j++) {
+          if (d[k][j] >= INF/2) continue;
+          const nd = d[i][k] + d[k][j];
+          if (nd < d[i][j]) {
+            d[i][j] = nd;
+            next[i][j] = next[i][k];
+          }
+        }
+      }
+    }
+    // Normalize unreachable large values to actual Infinity for clearer UI checks
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (d[i][j] >= INF/2) d[i][j] = Infinity;
+    return { dmat: d, next };
+  };
+
+  const computeGraphMetrics = (vs = [], asList = [], directed = false) => {
+    const n = (vs || []).length;
+    if (n === 0) {
+      setDistMatrix(null); setEccArray([]); setSumDistances([]); setRadiusVal(null); setDiameterVal(null); setMedianVerts([]); setDiameterPairs([]); return;
+    }
+    const { dmat, next } = computeFloyd(vs, asList, directed);
+    // Reconstruct paths from next matrix
+    const paths = Array.from({ length: n }, () => Array.from({ length: n }, () => []));
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (!isFinite(dmat[i][j])) { paths[i][j] = []; continue; }
+        // build path i -> j
+        const path = [];
+        let u = i;
+        path.push(u);
+        while (u !== j) {
+          u = next[u][j];
+          if (u === null || u === undefined) { path.length = 0; break; }
+          path.push(u);
+          if (path.length > n + 5) { path.length = 0; break; }
+        }
+        paths[i][j] = path;
+      }
+    }
+
+    const ecc = Array.from({ length: n }, () => 0);
+    const sums = Array.from({ length: n }, () => 0);
+    for (let i = 0; i < n; i++) {
+      let maxd = 0; let s = 0; let unreachable = false;
+      for (let j = 0; j < n; j++) {
+        const dv = dmat[i][j];
+        if (i === j) continue;
+        if (!isFinite(dv)) { unreachable = true; s = Infinity; maxd = Infinity; break; }
+        if (dv > maxd) maxd = dv;
+        s += dv;
+      }
+      ecc[i] = unreachable ? Infinity : maxd;
+      sums[i] = unreachable ? Infinity : s;
+    }
+    const finiteEcc = ecc.filter(v => isFinite(v));
+    const radius = finiteEcc.length === 0 ? null : Math.min(...finiteEcc);
+    const diameter = finiteEcc.length === 0 ? null : Math.max(...finiteEcc);
+    // Median: consider only finite sums when finding the minimal sum
+    const finiteSums = sums.filter(v => isFinite(v));
+    const medMin = finiteSums.length === 0 ? Infinity : Math.min(...finiteSums);
+    const medVerts = [];
+    for (let i = 0; i < n; i++) if (isFinite(sums[i]) && Math.abs(sums[i] - medMin) < 1e-9) medVerts.push(i);
+    const diamPairs = [];
+    if (diameter !== null) {
+      for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) {
+        const dv = dmat[i][j]; if (!isFinite(dv)) continue; if (Math.abs(dv - diameter) < 1e-9) diamPairs.push([i,j]);
+      }
+    }
+    setDistMatrix(dmat);
+    setPathMatrix(paths);
+    setEccArray(ecc);
+    setSumDistances(sums);
+    setRadiusVal(radius);
+    setDiameterVal(diameter);
+    setMedianVerts(medVerts);
+    setDiameterPairs(diamPairs);
+  };
+
+  // Control visibility of computed views (metrics / trees)
+  const [showMetrics, setShowMetrics] = useState(false);
+  const [showTrees, setShowTrees] = useState(false);
+
+  // Do not auto-compute metrics on every change; instead clear previous results
+  // and wait for explicit user action (button clicks) to show metrics or trees.
+  useEffect(() => {
+    if (fase !== 'operaciones') return;
+    const { vs, es } = getCurrentGraph();
+    if (!vs || vs.length === 0) {
+      setDistMatrix(null);
+      setPathMatrix(null);
+      setShowMetrics(false);
+      setShowTrees(false);
+      return;
+    }
+    // Reset displayed results when graph content changes
+    setDistMatrix(null);
+    setPathMatrix(null);
+    setShowMetrics(false);
+    setShowTrees(false);
+    setHighlightMetric('none');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fase, grafo1, grafo2, grafoActual, vertices.length, aristas.length, esDirigido]);
+
+  const [showDebug, setShowDebug] = useState(false);
+
+  // current visible graph vertices helper for rendering labels in the metrics area
+  const currentVsGlobal = (grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices)) || [];
+  // Compute expansion distance between min and max trees (based on their edge label sets)
+  const A_min_labels = minResultado && minResultado.aristas ? (minResultado.aristas.map(a => {
+    const verts = minResultado.vertices || [];
+    const v1 = verts[a.origen]; const v2 = verts[a.destino];
+    const l1 = v1 ? (v1.etiqueta || `V${v1.id}`) : `V${a.origen}`;
+    const l2 = v2 ? (v2.etiqueta || `V${v2.id}`) : `V${a.destino}`;
+    const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
+    return `${l1}${l2}${peso}`;
+  })) : [];
+
+  const A_max_labels = maxResultado && maxResultado.aristas ? (maxResultado.aristas.map(a => {
+    const verts = maxResultado.vertices || [];
+    const v1 = verts[a.origen]; const v2 = verts[a.destino];
+    const l1 = v1 ? (v1.etiqueta || `V${v1.id}`) : `V${a.origen}`;
+    const l2 = v2 ? (v2.etiqueta || `V${v2.id}`) : `V${a.destino}`;
+    const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
+    return `${l1}${l2}${peso}`;
+  })) : [];
+
+  const setAmin = new Set(A_min_labels || []);
+  const setAmax = new Set(A_max_labels || []);
+  const unionSet = new Set([...setAmin, ...setAmax]);
+  const intersectionSet = new Set([...setAmin].filter(x => setAmax.has(x)));
+  const expansionDistance = ((unionSet.size - intersectionSet.size) / 2);
+
   return (
     <div className="panel operaciones-grafos">
       {fase !== "operaciones" && (
@@ -798,13 +1152,14 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
       )}
       {/* menu removed: operations is the initial view */}
       {fase === "crear" && (
-        <div className="crear-card">
+        <div className="crear-card" style={{ maxWidth: 760, margin: '0 auto' }}>
           <div className="crear-header">Crear Grafo</div>
           <div style={{ padding: 8 }}>
             <div className="campo" style={{ width: "100%" }}>
               <label htmlFor="numVertices" style={{ color: "#1d6a96", fontWeight: "bold", textAlign: "left", display: "block" }}>Cantidad de vértices:</label>
-              <input id="numVertices" type="number" value={numVertices} onChange={(e) => setNumVertices(e.target.value)} min="1" max="12" placeholder="1-12" className="input-chico" style={{ color: "black", backgroundColor: "white", padding: "6px 8px", border: "1px solid #aaa", borderRadius: "6px" }} />
+              <input id="numVertices" type="number" value={numVertices} onChange={(e) => setNumVertices(Number(e.target.value))} min="1" max="12" placeholder="1-12" className="input-chico" style={{ color: "black", backgroundColor: "white", padding: "6px 8px", border: "1px solid #aaa", borderRadius: "6px" }} />
             </div>
+            {/* Removed Centro/Bicentro display from crear view (not applicable while creating) */}
             <div style={{ height: "1px", background: "#c9d6db", margin: "8px 0" }} />
 
               <div className="campo" style={{ width: "100%" }}>
@@ -817,6 +1172,11 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                 <input type="radio" name="tipoId" value="alfabetico" checked={tipoIdentificador === "alfabetico"} onChange={(e) => setTipoIdentificador(e.target.value)} style={{ cursor: "pointer" }} />
                 Alfabético (A, B, C...)
               </label>
+              {(fase === 'crear' || fase === 'etiquetar') && (
+                <div style={{ marginTop: 8, color: '#7a9aa6', fontSize: '0.9rem' }}>
+                  Nota: Para árboles ponderados se recomienda usar etiquetas alfabéticas, pero la opción numérica está disponible.
+                </div>
+              )}
               <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#283b42', cursor: 'pointer' }} title="Alternar grafo dirigido/no dirigido">
                   <input type="checkbox" checked={esDirigido} onChange={() => setEsDirigido(prev=>!prev)} style={{ cursor: 'pointer' }} />
@@ -824,6 +1184,7 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                 </label>
               </div>
             </div>
+            {/* Removed Centro/Bicentro display from crear view (not applicable while creating) */}
             <div style={{ height: "1px", background: "#c9d6db", margin: "8px 0" }} />
 
             <div className="campo" style={{ width: "100%" }}>
@@ -859,7 +1220,7 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
               gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
               gap: "12px",
               maxHeight: "400px",
-              overflowY: "auto",
+              overflowY: "visible",
               padding: "10px"
             }}>
             {vertices.map((v, i) => (
@@ -904,8 +1265,17 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                   ? "Seleccione el par de vértices origen y destino para establecer una arista" 
                   : `Vértice ${vertices[primeraArista]?.etiqueta || `V${primeraArista}`} tendrá adyacencia con: seleccione el destino`}
               </p>
-              <div style={{ position: "relative", maxHeight: "440px", overflowY: "auto", overflowX: "auto" }}>
+              <div style={{ position: "relative", maxHeight: "440px", overflowY: "visible", overflowX: "visible" }}>
                 <svg width="520" height="420" style={{ border: "2px solid #1d6a96", borderRadius: "8px", backgroundColor: "#e7f0ee" }}>
+                  <defs>
+                                  <marker id="arrow-grafo" viewBox="0 0 10 10" refX="12" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d6a96" />
+                                  </marker>
+                                  {/* smaller, more subtle marker for self-loops */}
+                                  <marker id="arrow-grafo-loop" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="4" markerHeight="4" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 4 5 L 0 10 z" fill="#1d6a96" />
+                                  </marker>
+                  </defs>
                   {Array.from(gruposAristas.entries()).map(([key, grupo]) => {
                     const groupSize = grupo.length;
                     const midIndex = (groupSize - 1) / 2;
@@ -922,28 +1292,35 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                       if (v1.id === v2.id) {
                         const x = v1.x;
                         const y = v1.y;
-                        const rx = 30 + idx * 8;
-                        const ry = 30 + idx * 8;
-                        const offsetX = 35 + idx * 15;
-                        const offsetY = 35 + idx * 15;
-                        const path = `M ${x + 15} ${y} C ${x + offsetX} ${y - offsetY}, ${x + offsetX} ${y + offsetY}, ${x + 15} ${y}`;
-                        const pesoX = x + offsetX + 5;
-                        const pesoY = y;
+                        // make the self-loop noticeably larger so it's visible
+                        const rx = 52 + idx * 10;
+                        const ry = 46 + idx * 10;
+                        const offsetX = 56 + idx * 18;
+                        const offsetY = 52 + idx * 18;
+                        // start the loop a bit further from the node center
+                        const path = `M ${x + 20} ${y} C ${x + offsetX} ${y - offsetY}, ${x + offsetX + rx} ${y + offsetY}, ${x + 20} ${y}`;
+                        const pesoX = x + offsetX + rx * 0.3;
+                        const pesoY = y - ry * 0.2;
                         const edgeStrokeColor = strokeColor;
-                        const edgeStrokeW = strokeWidth + 1.2;
+                        // use same stroke width as other edges (no extra thick loop)
+                        const edgeStrokeW = strokeWidth;
                         return (
-                                      <g key={arista.id} onClick={(e) => { if (deletingEdgeMode) { handleEdgeDeleteClick(arista); e.stopPropagation(); } }} style={{ cursor: deletingEdgeMode ? 'pointer' : 'default' }}>
-                                        <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                                        <path d={path} stroke={strokeColor} strokeWidth={strokeWidth + 1.2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                                        <text x={pesoX} y={pesoY} fill="#283b42" fontSize="11" fontWeight="bold" textAnchor="middle" dy="0.3em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
-                                      </g>
-                                    );
+                          <g key={arista.id} onClick={(e) => { if (deletingEdgeMode) { handleEdgeDeleteClick(arista); e.stopPropagation(); } }} style={{ cursor: deletingEdgeMode ? 'pointer' : 'default' }}>
+                            <path d={path} stroke={bgColor} strokeWidth={strokeWidth + 4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                            <path d={path} stroke={strokeColor} strokeWidth={edgeStrokeW} strokeLinecap="round" strokeLinejoin="round" fill="none" markerEnd={(esDirigido || arista.dirigida) ? `url(#arrow-grafo-loop)` : undefined} />
+                            <text x={pesoX} y={pesoY} fill="#283b42" fontSize="12" fontWeight="bold" textAnchor="middle" dy="0.3em" stroke="#e7f0ee" strokeWidth="3" paintOrder="stroke fill">{arista.peso}</text>
+                          </g>
+                        );
                       }
 
-                      const x1 = v1.x;
-                      const y1 = v1.y;
-                      const x2 = v2.x;
-                      const y2 = v2.y;
+                      // compute endpoints on vertex circle borders so arrows touch node edges
+                      const R = 22;
+                      const p1 = pointOnCircle(v1.x, v1.y, R, v2.x, v2.y);
+                      const p2 = pointOnCircle(v2.x, v2.y, R, v1.x, v1.y);
+                      const x1 = p1.x;
+                      const y1 = p1.y;
+                      const x2 = p2.x;
+                      const y2 = p2.y;
                       const mx = (x1 + x2) / 2;
                       const my = (y1 + y2) / 2;
                       const dx = x2 - x1;
@@ -1005,6 +1382,27 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                       <text x={v.x} y={v.y} textAnchor="middle" dy="0.3em" fill="white" fontSize="13" fontWeight="bold" pointerEvents="none">{v.etiqueta || `V${v.id}`}</text>
                     </g>
                   ))}
+                  {/* overlay markers so arrowheads appear above the node circles (include self-loops) */}
+                  {aristas && aristas.length > 0 && aristas.map((a) => {
+                    const directedEdge = esDirigido || a.dirigida;
+                    if (!directedEdge) return null;
+                    const sv = vertices[a.origen];
+                    const tv = vertices[a.destino];
+                    if (!sv || !tv) return null;
+                    if (a.origen === a.destino) {
+                      // self-loop: place arrow near right side of the node, offset so it's visible
+                      const p2 = pointOnCircle(tv.x, tv.y, 22, tv.x + 1, tv.y);
+                      const sx = p2.x - 14;
+                      const sy = p2.y - 6;
+                      return (<path key={`mk-g-${a.id}`} d={`M ${sx} ${sy} L ${p2.x} ${p2.y}`} stroke="transparent" fill="none" markerEnd={`url(#arrow-grafo-loop)`}/>);
+                    }
+                    const p2 = pointOnCircle(tv.x, tv.y, 22, sv.x, sv.y);
+                    const dx = tv.x - sv.x; const dy = tv.y - sv.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    const sx = p2.x - (dx / len) * 8;
+                    const sy = p2.y - (dy / len) * 8;
+                    return (<path key={`mk-g-${a.id}`} d={`M ${sx} ${sy} L ${p2.x} ${p2.y}`} stroke="transparent" fill="none" markerEnd={`url(#arrow-grafo)`}/>);
+                  })}
                 </svg>
               </div>
             </div>
@@ -1012,18 +1410,27 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
             <div style={{ width: "260px" }}>
               
               <p style={{ color: "#283b42", fontWeight: "bold", marginBottom: "10px" }}>Aristas ({aristas.length}):</p>
-              <div className="bloque" style={{ maxHeight: "320px", overflowY: "auto", backgroundColor: "#e7f0ee" }}>
+              <div className="bloque" style={{ maxHeight: "320px", overflowY: "visible", backgroundColor: "#e7f0ee" }}>
                 {aristas.length === 0 ? (
                   <p style={{ color: "#666", fontSize: "0.9rem" }}>Ninguna aún</p>
                 ) : (
                   aristas.map((a) => {
                     const isLoop = a.origen === a.destino;
-                    const label = isLoop
-                      ? `${vertices[a.origen]?.etiqueta || `V${a.origen}`} (bucle)`
-                      : `${vertices[a.origen]?.etiqueta || `V${a.origen}`} ↔ ${vertices[a.destino]?.etiqueta || `V${a.destino}`}`;
+                    let label;
+                    if (isLoop) {
+                      label = `${vertices[a.origen]?.etiqueta || `V${a.origen}`} (bucle)`;
+                    } else {
+                      const from = vertices[a.origen]?.etiqueta || `V${a.origen}`;
+                      const to = vertices[a.destino]?.etiqueta || `V${a.destino}`;
+                      if (esDirigido || a.dirigida) label = `${from} → ${to}`;
+                      else label = `${from} ↔ ${to}`;
+                    }
+                    const arrowIcon = isLoop ? '⟲' : ((esDirigido || a.dirigida) ? '→' : '↔');
                     return (
                       <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", marginBottom: "6px", backgroundColor: "#d1dddb", borderRadius: "6px", gap: "8px" }}>
-                        <span style={{ color: "#283b42", fontWeight: "bold", flex: "1" }}>{label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                          <span style={{ color: "#283b42", fontWeight: "bold" }}>{label}</span>
+                        </div>
                         <input type="text" value={a.peso} onChange={(e) => {
                             const newPesoRaw = e.target.value;
                             setAristas((prev) => prev.map((ar) => (ar.id === a.id ? { ...ar, peso: newPesoRaw } : ar)));
@@ -1038,14 +1445,10 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '10px 0 12px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {/* Operaciones con Vértices */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
+              {/* Operaciones: Insertar vértice, Eliminar vértice, Eliminar arista (misma línea) */}
               <button className="boton" onClick={handleInsertVertice} style={{ padding: '6px 10px' }}>➕ Insertar vértice</button>
               <button className="boton" onClick={() => { setDeletingVertexMode(true); alert('Seleccione el vértice que desea eliminar y confirme.'); }} style={{ padding: '6px 10px' }} disabled={vertices.length===0}>🗑 Eliminar vértice</button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {/* Operaciones con Aristas */}
               <button className="boton" onClick={() => { setDeletingEdgeMode(true); alert('Seleccione la arista que desea eliminar y confirme.'); }} style={{ padding: '6px 10px' }} disabled={aristas.length===0}>🗑 Eliminar arista</button>
             </div>
           </div>
@@ -1071,10 +1474,10 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
               </div>
 
               {/* Fila 2: los otros tres botones centrados debajo */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                 {((grafoActual === 1 && (grafo1 || vertices.length > 0)) || (grafoActual === 2 && (grafo2 || vertices.length > 0))) && (
                   <button onClick={() => { persistCurrentToMemory(); setFase("operaciones"); }} className="boton boton_agregar" style={{ padding: '8px 10px', minWidth: '170px' }}>
-                     Ir a la construcción de árboles
+                    Ir a la construcción de árboles
                   </button>
                 )}
                 {((grafoActual === 1 && grafo1) || (grafoActual === 2 && grafo2)) && (
@@ -1096,438 +1499,35 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
 
       {fase === "operaciones" && mode !== 'tree' && (
         <div style={{ marginTop: "10px" }}>
-          <h3 style={{ color: "#1d6a96", textAlign: "center", marginBottom: "10px" }}>Operaciones entre Grafos</h3>
+          <h3 style={{ color: "#1d6a96", textAlign: "center", marginBottom: "10px" }}>Árboles como Grafos</h3>
           {/* Hidden file input so Upload buttons in operations can trigger file selection */}
           <input ref={inputGrafoRef} type="file" accept=".json" onChange={handleCargarJSON} style={{ display: "none" }} />
-          <div className="panel-controles" style={{ display: "flex", flexDirection: "row", gap: "10px", alignItems: "center", maxWidth: "700px", margin: "0 auto 12px" }}>
-            <label style={{ fontWeight: "bold", color: "#1d6a96", whiteSpace: "nowrap" }}>Seleccione la operación a realizar:</label>
-            <select className="boton" style={{ padding: "8px", color: "#283b42", backgroundColor: "white", flex: 1 }} value={operacion} onChange={(e)=>setOperacion(e.target.value)}>
-              <option value="" disabled>-- Seleccionar --</option>
-              <option value="union">Unión</option>
-              <option value="interseccion">Intersección</option>
-              <option value="suma_anillo">Suma Anillo</option>
-              <option value="suma">Suma</option>
-              <option value="producto_cartesiano">Producto Cartesiano</option>
-              <option value="producto_tensorial">Producto Tensorial</option>
-              <option value="composicion">Composición entre grafos</option>
-            </select>
-            <button className="boton boton_agregar" disabled={!operacion || !hasG1 || !hasG2} title={(!hasG1 || !hasG2) ? "Necesita dos grafos para operar" : "Operar"} onClick={()=>{
-              const vs1 = (grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : []))||[];
-              const vs2 = (grafo2 ? grafo2.vertices : (grafoActual === 2 ? vertices : []))||[];
-              const as1 = (grafo1 ? grafo1.aristas : (grafoActual === 1 ? aristas : []))||[];
-              const as2 = (grafo2 ? grafo2.aristas : (grafoActual === 2 ? aristas : []))||[];
-              
-              if (operacion === 'suma'){
-                // Suma: unir todos los vértices; si tienen mismo nombre se vuelven uno; conectar todos de G1 con todos de G2
-                const width = 520; const paddingX=40; const topY=90; const bottomY=330;
-                const labelMap = {};
-                const newV = [];
-                const vMap = {};
-                
-                // Agregar vértices de G1
-                vs1.forEach((v,i)=> {
-                  const lbl = v.etiqueta||`V${v.id}`;
-                  if(!labelMap[lbl]){
-                    const vid = `v-${newV.length}`;
-                    labelMap[lbl] = vid;
-                    newV.push({id: vid, x: 0, y: 0, etiqueta: lbl});
-                  }
-                  vMap[`g1-${i}`] = labelMap[lbl];
-                });
-                // Agregar vértices de G2 (si no están)
-                vs2.forEach((v,i)=> {
-                  const lbl = v.etiqueta||`V${v.id}`;
-                  if(!labelMap[lbl]){
-                    const vid = `v-${newV.length}`;
-                    labelMap[lbl] = vid;
-                    newV.push({id: vid, x: 0, y: 0, etiqueta: lbl});
-                  }
-                  vMap[`g2-${i}`] = labelMap[lbl];
-                });
-                
-                // Layout
-                const cols = newV.length;
-                const space = cols>1 ? (width-2*paddingX)/(cols-1) : 0;
-                newV.forEach((v,i)=> { v.x = paddingX + i*space; v.y = 210; });
-                
-                // Conectar todos de G1 con todos de G2 (evitar duplicados y bucles si mismo vértice)
-                const edgeSet = new Set();
-                const newA = [];
-                for(let i=0;i<vs1.length;i++){
-                  for(let j=0;j<vs2.length;j++){
-                    const v1id = vMap[`g1-${i}`];
-                    const v2id = vMap[`g2-${j}`];
-                    if(v1id === v2id) continue; // no bucles
-                    const key = v1id < v2id ? `${v1id}-${v2id}` : `${v2id}-${v1id}`;
-                    if(!edgeSet.has(key)){
-                      edgeSet.add(key);
-                      const idx1 = newV.findIndex(v=>v.id===v1id);
-                      const idx2 = newV.findIndex(v=>v.id===v2id);
-                      newA.push({id:`a-${newA.length}`, origen: idx1, destino: idx2, peso: getDefaultEdgeWeight()});
-                    }
-                  }
-                }
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'union'){
-                // Unión: unir vértices (si mismo nombre→uno), unir todas aristas
-                const width = 520; const paddingX=40; const topY=90; const bottomY=330;
-                const labelMap = {};
-                const newV = [];
-                const vMap1 = {};
-                const vMap2 = {};
-                
-                vs1.forEach((v,i)=> {
-                  const lbl = v.etiqueta||`V${v.id}`;
-                  if(!labelMap[lbl]){
-                    const vid = `v-${newV.length}`;
-                    labelMap[lbl] = vid;
-                    newV.push({id: vid, x: 0, y: 0, etiqueta: lbl});
-                  }
-                  vMap1[i] = labelMap[lbl];
-                });
-                vs2.forEach((v,i)=> {
-                  const lbl = v.etiqueta||`V${v.id}`;
-                  if(!labelMap[lbl]){
-                    const vid = `v-${newV.length}`;
-                    labelMap[lbl] = vid;
-                    newV.push({id: vid, x: 0, y: 0, etiqueta: lbl});
-                  }
-                  vMap2[i] = labelMap[lbl];
-                });
-                
-                const cols = newV.length;
-                const space = cols>1 ? (width-2*paddingX)/(cols-1) : 0;
-                newV.forEach((v,i)=> { v.x = paddingX + i*space; v.y = 210; });
-                
-                const edgeSet = new Set();
-                const newA = [];
-                const edgeMap = new Map();
-                as1.forEach(a=>{
-                  const vid1 = vMap1[a.origen];
-                  const vid2 = vMap1[a.destino];
-                  if(!vid1 || !vid2) return;
-                  const key = vid1===vid2 ? `${vid1}-${vid1}` : (vid1<vid2 ? `${vid1}-${vid2}` : `${vid2}-${vid1}`);
-                  if(!edgeMap.has(key)) edgeMap.set(key, { origen: vid1, destino: vid2, peso: a.peso });
-                });
-                as2.forEach(a=>{
-                  const vid1 = vMap2[a.origen];
-                  const vid2 = vMap2[a.destino];
-                  if(!vid1 || !vid2) return;
-                  const key = vid1===vid2 ? `${vid1}-${vid1}` : (vid1<vid2 ? `${vid1}-${vid2}` : `${vid2}-${vid1}`);
-                  if(edgeMap.has(key)){
-                    // combinar pesos para la misma arista
-                    const existing = edgeMap.get(key);
-                    existing.peso = combineWeights(existing.peso, a.peso, 'union');
-                    edgeMap.set(key, existing);
-                  } else {
-                    edgeMap.set(key, { origen: vid1, destino: vid2, peso: a.peso });
-                  }
-                });
-                // Convert map to array
-                const edgeKeys = Array.from(edgeMap.keys());
-                edgeKeys.forEach((key)=>{
-                  const item = edgeMap.get(key);
-                  const idx1 = newV.findIndex(v=>v.id===item.origen);
-                  const idx2 = newV.findIndex(v=>v.id===item.destino);
-                  if(idx1!==-1 && idx2!==-1) newA.push({id:`a-${newA.length}`, origen: idx1, destino: idx2, peso:item.peso||1});
-                });
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'interseccion'){
-                // Intersección: vértices con mismo nombre en ambos grafos, aristas que estén en ambos
-                const width = 320; const paddingX=30;
-                const labels1 = new Set(vs1.map(v=>v.etiqueta||`V${v.id}`));
-                const labels2 = new Set(vs2.map(v=>v.etiqueta||`V${v.id}`));
-                const commonLabels = [...labels1].filter(l=>labels2.has(l));
-                
-                if(commonLabels.length === 0) {
-                  finalizeResultado([], []);
-                  return;
-                }
-                
-                const labelMap = {};
-                const newV = [];
-                commonLabels.forEach((lbl,i)=>{
-                  const vid = `v-${i}`;
-                  labelMap[lbl] = vid;
-                  newV.push({id: vid, x: 0, y: 140, etiqueta: lbl});
-                });
-                const cols = Math.ceil(newV.length / 2);
-                const row1 = newV.slice(0, cols);
-                const row2 = newV.slice(cols);
-                const space1 = row1.length>1 ? (width-2*paddingX)/(row1.length-1) : 0;
-                const space2 = row2.length>1 ? (width-2*paddingX)/(row2.length-1) : 0;
-                row1.forEach((v,i)=> { v.x = paddingX + i*space1; v.y = 70; });
-                row2.forEach((v,i)=> { v.x = paddingX + i*space2; v.y = 210; });
-                
-                // Map original indices to common labels
-                const vMap1 = {};
-                const vMap2 = {};
-                vs1.forEach((v,i)=>{ const lbl=v.etiqueta||`V${v.id}`; if(labelMap[lbl]) vMap1[i]=labelMap[lbl]; });
-                vs2.forEach((v,i)=>{ const lbl=v.etiqueta||`V${v.id}`; if(labelMap[lbl]) vMap2[i]=labelMap[lbl]; });
-                
-                // Aristas comunes: mapear claves a pesos por grafo y combinar
-                const edgeMap1 = new Map();
-                as1.forEach(a=>{
-                  const v1 = vMap1[a.origen];
-                  const v2 = vMap1[a.destino];
-                  if(v1 && v2){
-                    const key = v1===v2 ? `${v1}-${v1}` : (v1<v2 ? `${v1}-${v2}` : `${v2}-${v1}`);
-                    if(!edgeMap1.has(key)) edgeMap1.set(key, a.peso);
-                  }
-                });
-                const edgeMap2 = new Map();
-                as2.forEach(a=>{
-                  const v1 = vMap2[a.origen];
-                  const v2 = vMap2[a.destino];
-                  if(v1 && v2){
-                    const key = v1===v2 ? `${v1}-${v1}` : (v1<v2 ? `${v1}-${v2}` : `${v2}-${v1}`);
-                    if(!edgeMap2.has(key)) edgeMap2.set(key, a.peso);
-                  }
-                });
-                const commonKeys = [...edgeMap1.keys()].filter(k=>edgeMap2.has(k));
-                const newA = [];
-                commonKeys.forEach(k=>{
-                  const [v1,v2] = k.split('-');
-                  const idx1 = newV.findIndex(v=>v.id===v1);
-                  const idx2 = newV.findIndex(v=>v.id===v2);
-                  if(idx1!==-1 && idx2!==-1){
-                    const w1 = edgeMap1.get(k);
-                    const w2 = edgeMap2.get(k);
-                    const peso = combineWeights(w1, w2, 'intersect');
-                    newA.push({id:`a-${newA.length}`, origen:idx1, destino:idx2, peso:peso});
-                  }
-                });
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'suma_anillo'){
-                // Suma anillo: aristas de la unión menos las de la intersección (diferencia simétrica)
-                const makeKey = (l1, l2) => (l1 === l2 ? `${l1}-${l1}` : (l1 < l2 ? `${l1}-${l2}` : `${l2}-${l1}`));
-                const edges1 = new Map();
-                as1.forEach(a=>{
-                  const l1 = vs1[a.origen]?.etiqueta || `V${vs1[a.origen]?.id}`;
-                  const l2 = vs1[a.destino]?.etiqueta || `V${vs1[a.destino]?.id}`;
-                  const k = makeKey(l1, l2);
-                  edges1.set(k, a.peso);
-                });
-                const edges2 = new Map();
-                as2.forEach(a=>{
-                  const l1 = vs2[a.origen]?.etiqueta || `V${vs2[a.origen]?.id}`;
-                  const l2 = vs2[a.destino]?.etiqueta || `V${vs2[a.destino]?.id}`;
-                  const k = makeKey(l1, l2);
-                  edges2.set(k, a.peso);
-                });
-
-                const keys1 = Array.from(edges1.keys());
-                const keys2 = Array.from(edges2.keys());
-                const unionKeys = new Set([...keys1, ...keys2]);
-                const intersectKeys = new Set(keys1.filter(k=> edges2.has(k)));
-                const resultKeys = Array.from(unionKeys).filter(k=> !intersectKeys.has(k));
-
-                // Build vertex union (todos los vértices de ambos grafos, sin duplicados), manteniendo orden
-                const allLabelsOrdered = [];
-                vs1.forEach(v=> allLabelsOrdered.push(v.etiqueta||`V${v.id}`));
-                vs2.forEach(v=> allLabelsOrdered.push(v.etiqueta||`V${v.id}`));
-                const unionLabels = Array.from(new Set(allLabelsOrdered));
-                const newV = unionLabels.map((lbl,i)=>({ id: `v-${i}`, x:0, y:0, etiqueta: lbl }));
-
-                // Si no hay aristas en la diferencia, mostramos todos los vértices pero sin aristas
-                if(resultKeys.length === 0){
-                  layoutCircular(newV, 520, 420);
-                  finalizeResultado(newV, []);
-                  return;
-                }
-
-                // Mapear label -> índice en newV
-                const labelIndex = {};
-                newV.forEach((v,i)=> { labelIndex[v.etiqueta] = i; });
-
-                const newA = [];
-                resultKeys.forEach(k=>{
-                  const [l1,l2] = k.split('-');
-                  const peso = edges1.has(k) ? edges1.get(k) : edges2.get(k);
-                  const idx1 = labelIndex[l1];
-                  const idx2 = labelIndex[l2];
-                  if(idx1 !== undefined && idx2 !== undefined) newA.push({id:`a-${newA.length}`, origen: idx1, destino: idx2, peso: peso});
-                });
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'producto_cartesiano'){
-                // Producto cartesiano G x H: V = V(G) x V(H)
-                // (g1,h1) ~ (g2,h2) if (g1==g2 and (h1,h2) in E(H)) or (h1==h2 and (g1,g2) in E(G))
-                const makeKey = (l1, l2) => (l1 === l2 ? `${l1}-${l1}` : (l1 < l2 ? `${l1}-${l2}` : `${l2}-${l1}`));
-                const edgeMapG = new Map();
-                as1.forEach(a=>{
-                  const l1 = vs1[a.origen]?.etiqueta || `V${vs1[a.origen]?.id}`;
-                  const l2 = vs1[a.destino]?.etiqueta || `V${vs1[a.destino]?.id}`;
-                  edgeMapG.set(makeKey(l1,l2), a.peso);
-                });
-                const edgeMapH = new Map();
-                as2.forEach(a=>{
-                  const l1 = vs2[a.origen]?.etiqueta || `V${vs2[a.origen]?.id}`;
-                  const l2 = vs2[a.destino]?.etiqueta || `V${vs2[a.destino]?.id}`;
-                  edgeMapH.set(makeKey(l1,l2), a.peso);
-                });
-
-                const newV = [];
-                for (let i=0;i<vs1.length;i++){
-                  for (let j=0;j<vs2.length;j++){
-                    const lbl1 = vs1[i].etiqueta||`V${vs1[i].id}`;
-                    const lbl2 = vs2[j].etiqueta||`V${vs2[j].id}`;
-                    newV.push({ id: `v-${i}-${j}`, x:0, y:0, etiqueta: `${lbl1}${lbl2}`});
-                  }
-                }
-                const labelIndex = {};
-                newV.forEach((v, idx)=> labelIndex[v.etiqueta]=idx);
-                const newA = [];
-                // iterate pairs of product vertices
-                for (let i1=0;i1<vs1.length;i1++){
-                  for (let j1=0;j1<vs2.length;j1++){
-                    for (let i2=0;i2<vs1.length;i2++){
-                      for (let j2=0;j2<vs2.length;j2++){
-                        if (i1===i2 && j1===j2) continue;
-                        const lblA1 = vs1[i1].etiqueta||`V${vs1[i1].id}`;
-                        const lblA2 = vs1[i2].etiqueta||`V${vs1[i2].id}`;
-                        const lblB1 = vs2[j1].etiqueta||`V${vs2[j1].id}`;
-                        const lblB2 = vs2[j2].etiqueta||`V${vs2[j2].id}`;
-                        let shouldAdd = false; let peso = undefined;
-                        if (lblA1 === lblA2) {
-                          // check edge in H between lblB1-lblB2
-                          const k = makeKey(lblB1, lblB2);
-                          if (edgeMapH.has(k)) { shouldAdd = true; peso = edgeMapH.get(k); }
-                        }
-                        if (lblB1 === lblB2) {
-                          const k = makeKey(lblA1, lblA2);
-                          if (edgeMapG.has(k)) { shouldAdd = true; peso = edgeMapG.get(k); }
-                        }
-                        if (shouldAdd) {
-                          const id1 = labelIndex[`${lblA1}${lblB1}`];
-                          const id2 = labelIndex[`${lblA2}${lblB2}`];
-                          if (id1!==undefined && id2!==undefined) newA.push({ id:`a-${newA.length}`, origen:id1, destino:id2, peso });
-                        }
-                      }
-                    }
-                  }
-                }
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'producto_tensorial'){
-                // Producto tensorial (Kronecker): V = V(G) x V(H)
-                // (g1,h1) ~ (g2,h2) iff (g1,g2) in E(G) and (h1,h2) in E(H)
-                const makeKey = (l1, l2) => (l1 === l2 ? `${l1}-${l1}` : (l1 < l2 ? `${l1}-${l2}` : `${l2}-${l1}`));
-                const edgeMapG = new Map();
-                as1.forEach(a=>{
-                  const l1 = vs1[a.origen]?.etiqueta || `V${vs1[a.origen]?.id}`;
-                  const l2 = vs1[a.destino]?.etiqueta || `V${vs1[a.destino]?.id}`;
-                  edgeMapG.set(makeKey(l1,l2), a.peso);
-                });
-                const edgeMapH = new Map();
-                as2.forEach(a=>{
-                  const l1 = vs2[a.origen]?.etiqueta || `V${vs2[a.origen]?.id}`;
-                  const l2 = vs2[a.destino]?.etiqueta || `V${vs2[a.destino]?.id}`;
-                  edgeMapH.set(makeKey(l1,l2), a.peso);
-                });
-                const newV = [];
-                for (let i=0;i<vs1.length;i++) for (let j=0;j<vs2.length;j++){
-                  const lbl1 = vs1[i].etiqueta||`V${vs1[i].id}`;
-                  const lbl2 = vs2[j].etiqueta||`V${vs2[j].id}`;
-                  newV.push({ id: `v-${i}-${j}`, x:0, y:0, etiqueta: `${lbl1}${lbl2}`});
-                }
-                const labelIndex = {};
-                newV.forEach((v, idx)=> labelIndex[v.etiqueta]=idx);
-                const newA = [];
-                for (let i1=0;i1<vs1.length;i1++){
-                  for (let j1=0;j1<vs2.length;j1++){
-                    for (let i2=0;i2<vs1.length;i2++){
-                      for (let j2=0;j2<vs2.length;j2++){
-                        if (i1===i2 && j1===j2) continue;
-                        const aGk = makeKey(vs1[i1].etiqueta||`V${vs1[i1].id}`, vs1[i2].etiqueta||`V${vs1[i2].id}`);
-                        const aHk = makeKey(vs2[j1].etiqueta||`V${vs2[j1].id}`, vs2[j2].etiqueta||`V${vs2[j2].id}`);
-                        if (edgeMapG.has(aGk) && edgeMapH.has(aHk)){
-                          const peso = combineWeights(edgeMapG.get(aGk), edgeMapH.get(aHk), 'union');
-                          const id1 = labelIndex[`${(vs1[i1].etiqueta||`V${vs1[i1].id}`)+(vs2[j1].etiqueta||`V${vs2[j1].id}`)}`];
-                          const id2 = labelIndex[`${(vs1[i2].etiqueta||`V${vs1[i2].id}`)+(vs2[j2].etiqueta||`V${vs2[j2].id}`)}`];
-                          if (id1!==undefined && id2!==undefined) newA.push({ id:`a-${newA.length}`, origen:id1, destino:id2, peso });
-                        }
-                      }
-                    }
-                  }
-                }
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else if (operacion === 'composicion'){
-                // Composición (lexicográfico) G[H]: V = V(G) x V(H)
-                // (g1,h1) ~ (g2,h2) if (g1,g2) in E(G) OR (g1==g2 and (h1,h2) in E(H))
-                const makeKey = (l1, l2) => (l1 === l2 ? `${l1}-${l1}` : (l1 < l2 ? `${l1}-${l2}` : `${l2}-${l1}`));
-                const edgeMapG = new Map();
-                as1.forEach(a=>{
-                  const l1 = vs1[a.origen]?.etiqueta || `V${vs1[a.origen]?.id}`;
-                  const l2 = vs1[a.destino]?.etiqueta || `V${vs1[a.destino]?.id}`;
-                  edgeMapG.set(makeKey(l1,l2), a.peso);
-                });
-                const edgeMapH = new Map();
-                as2.forEach(a=>{
-                  const l1 = vs2[a.origen]?.etiqueta || `V${vs2[a.origen]?.id}`;
-                  const l2 = vs2[a.destino]?.etiqueta || `V${vs2[a.destino]?.id}`;
-                  edgeMapH.set(makeKey(l1,l2), a.peso);
-                });
-                const newV = [];
-                for (let i=0;i<vs1.length;i++) for (let j=0;j<vs2.length;j++){
-                  const lbl1 = vs1[i].etiqueta||`V${vs1[i].id}`;
-                  const lbl2 = vs2[j].etiqueta||`V${vs2[j].id}`;
-                  newV.push({ id: `v-${i}-${j}`, x:0, y:0, etiqueta: `${lbl1}${lbl2}`});
-                }
-                const labelIndex = {};
-                newV.forEach((v, idx)=> labelIndex[v.etiqueta]=idx);
-                const newA = [];
-                for (let i1=0;i1<vs1.length;i1++){
-                  for (let j1=0;j1<vs2.length;j1++){
-                    for (let i2=0;i2<vs1.length;i2++){
-                      for (let j2=0;j2<vs2.length;j2++){
-                        if (i1===i2 && j1===j2) continue;
-                        const lblG1 = vs1[i1].etiqueta||`V${vs1[i1].id}`;
-                        const lblG2 = vs1[i2].etiqueta||`V${vs1[i2].id}`;
-                        const lblH1 = vs2[j1].etiqueta||`V${vs2[j1].id}`;
-                        const lblH2 = vs2[j2].etiqueta||`V${vs2[j2].id}`;
-                        let shouldAdd = false; let peso = undefined;
-                        const kG = makeKey(lblG1, lblG2);
-                        if (edgeMapG.has(kG)) { shouldAdd = true; peso = edgeMapG.get(kG); }
-                        else if (lblG1 === lblG2) {
-                          const kH = makeKey(lblH1, lblH2);
-                          if (edgeMapH.has(kH)) { shouldAdd = true; peso = edgeMapH.get(kH); }
-                        }
-                        if (shouldAdd) {
-                          const id1 = labelIndex[`${lblG1}${lblH1}`];
-                          const id2 = labelIndex[`${lblG2}${lblH2}`];
-                          if (id1!==undefined && id2!==undefined) newA.push({ id:`a-${newA.length}`, origen:id1, destino:id2, peso });
-                        }
-                      }
-                    }
-                  }
-                }
-                layoutCircular(newV, 520, 420);
-                finalizeResultado(newV, newA);
-              } else {
-                setResultado(null);
-              }
-            }}>Operar</button>
-          </div>
-          <div style={{ display: "flex", gap: "24px", justifyContent: "center", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: 'center' }}>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+          {/* top controls removed here; editing buttons will be placed directly under the graph title */}
+          {/* Metrics table is rendered below the main graph now. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "18px", alignItems: 'center' }}>
+            {/* Main graph (full-width centered) */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginBottom: "6px", maxWidth: 1040 }}>
                   <p style={{ color: "#283b42", fontWeight: "bold", textAlign: "center", margin: 0 }}>Grafo (G)</p>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button className="boton boton_agregar" style={{ padding: "6px 8px", fontSize: "0.85rem" }} onClick={() => handleStartCreateGraph(2)}>➕ Crear Grafo</button>
-                    <button className="boton" style={{ padding: "6px 8px", fontSize: "0.85rem" }} onClick={() => handleUploadTo(2)}>📤 Subir</button>
+                </div>
+                {/* Editing buttons directly under the title */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button className="boton boton_agregar" style={{ padding: "6px 8px", fontSize: "0.95rem" }} onClick={() => handleStartCreateGraph(2)}>➕ Crear Grafo</button>
+                    <button className="boton" style={{ padding: "6px 8px", fontSize: "0.95rem" }} onClick={() => handleUploadTo(2)}>📤 Subir</button>
                     <button className="boton boton_agregar" onClick={() => {
                       const source = (grafo2 ? grafo2 : (grafo1 ? grafo1 : { nombre: grafoNombre || 'Grafo-G', vertices, aristas }));
                       exportGrafoObject({ nombre: source.nombre || 'Grafo-G', numVertices: (source.vertices||[]).length, tipoIdentificador, metodoAsignacion, vertices: source.vertices, aristas: source.aristas });
                     }}>💾 Guardar Grafo</button>
+                    {(grafo2 || grafo1 || vertices.length > 0) && (
+                      <button className="boton" style={{ padding: '6px 8px', fontSize: '0.95rem' }} onClick={() => handleEditarGrafo(grafo2 ? 2 : (grafo1 ? 1 : grafoActual))}>✏️ Editar Grafo</button>
+                    )}
                   </div>
                 </div>
-                {renderGraph((grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices)), (grafo2 ? grafo2.aristas : (grafo1 ? grafo1.aristas : aristas)), false, esDirigido)}
+                <div style={{ maxWidth: 760, maxHeight: 520, overflow: 'visible', padding: 6 }}>
+                  {renderGraph((grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices)), (grafo2 ? grafo2.aristas : (grafo1 ? grafo1.aristas : aristas)), false, esDirigido)}
+                </div>
                 <p style={{ color: "#283b42", marginTop: "6px", fontSize: "0.9rem", textAlign: 'center' }}>
                   <strong>G (vértices):</strong> {((grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices))||[]).map(v=>v.etiqueta||`V${v.id}`).join(", ")}<br/>
                   <strong>G (aristas):</strong> {(((grafo2 ? grafo2.aristas : (grafo1 ? grafo1.aristas : aristas))||[]).map(a=>{
@@ -1537,35 +1537,278 @@ function ArbolesGrafos({ onBack, mode = 'graph', initialDirected = false, initia
                     const l1 = v1 ? (v1.etiqueta||`V${v1.id}`) : `V${a.origen}`;
                     const l2 = v2 ? (v2.etiqueta||`V${v2.id}`) : `V${a.destino}`;
                     const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
-                    return `${l1}${l2}${peso}`;
+                    return `${pairLabel(l1,l2)}${peso}`;
                   })).join(", ") || "∅"}
                 </p>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", flexDirection: 'column' }}>
-              <div>
-                <p style={{ color: "#283b42", fontWeight: "bold", textAlign: "center", marginBottom: "6px" }}>Árbol (T)</p>
-                {renderGraph((grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : [])), (grafo1 ? grafo1.aristas : (grafoActual === 1 ? aristas : [])), false, esDirigido)}
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
-                  <button className="boton boton_agregar" onClick={() => {
-                    const source = (grafo1 ? grafo1 : { nombre: grafoNombre || 'Arbol-T', vertices: (grafo1 ? grafo1.vertices : vertices) || [], aristas: (grafo1 ? grafo1.aristas : aristas) || [] });
-                    exportGrafoObject({ nombre: source.nombre || 'Arbol-T', numVertices: (source.vertices||[]).length, tipoIdentificador, metodoAsignacion, vertices: source.vertices, aristas: source.aristas });
-                  }}>💾 Guardar Árbol</button>
+                {/* Generate trees and metrics buttons under the graph area */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button className="boton boton_agregar" onClick={() => { handleGenerarArboles(); setShowTrees(true); setShowMetrics(false); }} title={"Generar árboles de expansión"}>Generar árboles de expansión</button>
+
+                    <button className="boton" onClick={() => {
+                      const { vs, es } = getCurrentGraph();
+                      if (!vs || vs.length === 0) { alert('No hay vértices para calcular métricas'); return; }
+                      computeGraphMetrics(vs, es, esDirigido);
+                      setShowMetrics(true);
+                      setShowTrees(false);
+                      setHighlightMetric('none');
+                    }}>Calcular métricas</button>
+                  </div>
                 </div>
-                <p style={{ color: "#283b42", marginTop: "8px", fontSize: "0.95rem" }}>
-                  <strong>T (vértices):</strong> {(((grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : []))||[]).map(v=>v.etiqueta||`V${v.id}`)).join(', ') || '∅'}<br/>
-                  <strong>T (aristas):</strong> {(((grafo1 ? grafo1.aristas : (grafoActual === 1 ? aristas : []))||[]).map(a=>{
-                    const verts = (grafo1 ? grafo1.vertices : (grafoActual === 1 ? vertices : [])) || [];
-                    const v1 = verts[a.origen];
-                    const v2 = verts[a.destino];
-                    const l1 = v1 ? (v1.etiqueta||`V${v1.id}`) : `V${a.origen}`;
-                    const l2 = v2 ? (v2.etiqueta||`V${v2.id}`) : `V${a.destino}`;
-                    const peso = a.peso !== undefined && a.peso !== null ? `:${a.peso}` : '';
-                    return `${l1}${l2}${peso}`;
-                  })).join(', ') || '∅'}
-                </p>
+                {showMetrics && distMatrix && pathMatrix && (
+                  <div style={{ width: '100%', maxWidth: 1080, margin: '12px auto', overflowX: 'auto', background: '#fcfffe', padding: 8, borderRadius: 6, border: '1px solid #dfecec' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0b6a86' }}>Matriz de Floyd</div>
+                                  <div style={{ fontSize: 12, color: '#4b6b70' }}>Matriz de Floyd</div>
+                                </div>
+                                <div style={{ marginLeft: 12, fontSize: 13, color: '#283b42' }}>
+                                  <span style={{ fontWeight: 700 }}>Radio:</span> {radiusVal === null ? '∅' : (isFinite(radiusVal) ? radiusVal : '∞')} &nbsp; <span style={{ fontWeight: 700 }}>Centros:</span> {eccArray && radiusVal !== null ? eccArray.map((e, idx) => (isFinite(e) && Math.abs(e - radiusVal) < 1e-9 ? ((grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices))[idx]?.etiqueta || `V${idx}`) : null)).filter(x => x).join(', ') : '∅'}
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                  <button className={`boton ${highlightMetric==='radius'?'boton_agregar':''}`} onClick={() => setHighlightMetric('radius')}>Radio</button>
+                                  <button className={`boton ${highlightMetric==='diameter'?'boton_agregar':''}`} onClick={() => setHighlightMetric('diameter')}>Diámetro</button>
+                                  <button className={`boton ${highlightMetric==='median'?'boton_agregar':''}`} onClick={() => setHighlightMetric('median')}>Mediana</button>
+                      
+                                </div>
+                      </div>
+                      <div style={{ width: 1 }} />
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      {/* Explicit Floyd matrix view: rows and columns labeled with vertex etiquetas */}
+                      {(() => {
+                        const currentVs = (grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices)) || [];
+                        if (!currentVs || currentVs.length === 0) return null;
+                        return (
+                          <div style={{ marginBottom: 12, overflowX: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 700, color: '#0b6a86', marginBottom: 6 }}>Matriz de Floyd</div>
+                            <div style={{ overflowX: 'auto', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                              <table style={{ borderCollapse: 'collapse', color: '#000', minWidth: 360, margin: '0 auto', display: 'inline-table' }}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9' }}></th>
+                                    {currentVs.map((v, ci) => (
+                                      <th key={`h-${ci}`} style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9', textAlign: 'center' }}>{v?.etiqueta || `V${v?.id}`}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {distMatrix.map((row, i) => {
+                                    const labelI = (currentVs[i] && (currentVs[i].etiqueta || `V${currentVs[i].id}`)) || `V${i}`;
+                                      const rowIsRadius = (highlightMetric === 'radius' && radiusVal !== null && isFinite(eccArray[i]) && Math.abs(eccArray[i] - radiusVal) < 1e-9);
+                                    const rowIsMedian = (highlightMetric === 'median' && medianVerts && medianVerts.length > 0 && medianVerts.includes(i));
+                                    return (
+                                      <tr key={`mrow-${i}`} style={{ textDecoration: rowIsRadius || rowIsMedian ? 'underline' : 'none', background: rowIsRadius || rowIsMedian ? '#f0fbfa' : 'transparent' }}>
+                                        <th style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9', textAlign: 'center' }}>{labelI}</th>
+                                        {row.map((d, j) => {
+                                          const cellIsDiameter = (diameterPairs && diameterPairs.some(p => (p[0] === i && p[1] === j) || (p[0] === j && p[1] === i)));
+                                          const isEccCell = (isFinite(d) && isFinite(eccArray[i]) && Math.abs(d - eccArray[i]) < 1e-9);
+                                          let cellBg = '#fff';
+                                          if (!isFinite(d)) {
+                                            cellBg = '#fff6f6';
+                                          } else if (highlightMetric === 'diameter' && cellIsDiameter) {
+                                            cellBg = '#ffd89f'; // vivid orange for diameter when selected
+                                          } else if (highlightMetric === 'radius' && isEccCell && radiusVal !== null && isFinite(radiusVal) && Math.abs(eccArray[i] - radiusVal) < 1e-9) {
+                                            cellBg = '#7ee4b8'; // vivid green only when radius selected and this row is a center
+                                          }
+                                          return (<td key={`m-${i}-${j}`} style={{ border: '1px solid #d6eaea', padding: '6px', textAlign: 'center', background: cellBg }}>{!isFinite(d) ? '∞' : d}</td>);
+                                        })}
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+                        {distMatrix.map((row, i) => {
+                            const currentVs = (grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices)) || [];
+                            const labelI = (currentVs[i] && (currentVs[i].etiqueta || `V${currentVs[i].id}`)) || `V${i}`;
+                            const blockIsRadius = (highlightMetric === 'radius' && radiusVal !== null && isFinite(eccArray[i]) && Math.abs(eccArray[i] - radiusVal) < 1e-9);
+                            const blockIsMedian = (highlightMetric === 'median' && medianVerts && medianVerts.includes(i));
+                            return (
+                            <div key={`block-${i}`} style={{ background: blockIsRadius || blockIsMedian ? '#f0fbfa' : '#fcfffe', padding: 8, borderRadius: 6, border: '1px solid #dfecec' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                <div style={{ fontWeight: 700, color: '#0b6a86' }}>{labelI}</div>
+                              </div>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', color: '#000' }}>
+                                  <thead>
+                                    <tr>
+                                      <th style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9' }}>Distancia</th>
+                                      <th style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9' }}>Camino mínimo</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {row.map((d, j) => {
+                                      if (i === j) return null;
+                                      const labelJ = (currentVs[j] && (currentVs[j].etiqueta || `V${currentVs[j].id}`)) || `V${j}`;
+                                      // For diameter highlighting in per-source tables: highlight the cell
+                                      // that realizes the eccentricity of row i, but only when that
+                                      // eccentricity equals the global diameter.
+                                        const isEccCell = (isFinite(d) && isFinite(eccArray[i]) && Math.abs(d - eccArray[i]) < 1e-9);
+                                        const cellIsDiameter = (highlightMetric === 'diameter' && isEccCell && diameterVal !== null && isFinite(diameterVal) && Math.abs(eccArray[i] - diameterVal) < 1e-9);
+                                        let cellBg = '#fff';
+                                        if (!isFinite(d)) {
+                                          cellBg = '#fff6f6';
+                                        } else if (highlightMetric === 'diameter' && cellIsDiameter) {
+                                          // diameter selection has highest precedence for these highlighted cells
+                                          cellBg = '#ffd89f';
+                                        } else if (highlightMetric === 'radius' && isEccCell && radiusVal !== null && isFinite(radiusVal) && Math.abs(eccArray[i] - radiusVal) < 1e-9) {
+                                          // when radius is selected, highlight rows/ells that match center
+                                          cellBg = '#7ee4b8';
+                                        } else if (highlightMetric === 'none' && isEccCell) {
+                                          // default: always mark the eccentricity cell in each per-source table
+                                          cellBg = '#e6f4ff';
+                                        }
+                                      return (
+                                        <tr key={`r-${i}-${j}`}>
+                                          <td style={{ border: '1px solid #d6eaea', padding: '6px', background: '#f7fffd' }}>{pairLabel(labelI, labelJ)}</td>
+                                          <td style={{ border: '1px solid #d6eaea', padding: '6px', background: cellBg, textAlign: 'center' }}>{!isFinite(d) ? '∞' : d}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                    {/* Suma row */}
+                                    <tr key={`sum-${i}`}>
+                                      <td style={{ border: '1px solid #d6eaea', padding: '6px', background: '#eefaf9', fontWeight: '700' }}>Suma</td>
+                                      <td style={{ border: '1px solid #d6eaea', padding: '6px', background: (highlightMetric === 'median' && medianVerts && medianVerts.includes(i)) ? '#7ee4b8' : '#fff', textAlign: 'center', fontWeight: '700' }}>{fmtValue((sumDistances && sumDistances[i] !== undefined) ? sumDistances[i] : Infinity)}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                    {showDebug && (
+                      <div style={{ marginTop: 8, background: '#fff7f0', padding: 8, borderRadius: 6, border: '1px solid #ffdca8', fontSize: '0.85rem', color: '#283b42' }}>
+                        <div style={{ fontWeight: 700, marginBottom: 6 }}>Diagnóstico de métricas</div>
+                        <div><strong>Vértices (etiquetas):</strong> {JSON.stringify(((grafo2 ? grafo2.vertices : (grafo1 ? grafo1.vertices : vertices))||[]).map(v => v?.etiqueta || `V${v?.id}`))}</div>
+                        <div><strong>DistMatrix dims:</strong> {distMatrix ? `${distMatrix.length}×${(distMatrix[0]||[]).length}` : '∅'}</div>
+                        <div><strong>eccArray:</strong> {JSON.stringify(eccArray)}</div>
+                        <div><strong>sumDistances:</strong> {JSON.stringify(sumDistances)}</div>
+                        <div><strong>radiusVal:</strong> {radiusVal === null ? '∅' : (isFinite(radiusVal) ? radiusVal : '∞')}</div>
+                        <div><strong>diameterVal:</strong> {diameterVal === null ? '∅' : (isFinite(diameterVal) ? diameterVal : '∞')}</div>
+                        <div><strong>medianVerts:</strong> {JSON.stringify(medianVerts)}</div>
+                        <div><strong>diameterPairs:</strong> {JSON.stringify(diameterPairs)}</div>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, fontSize: '0.9rem', color: '#283b42' }}>
+                      <strong>Nota:</strong> haga clic en los botones para resaltar la fila (Radio/Mediana) o las celdas (Diámetro).
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Divider */}
+            {showTrees && (
+              <>
+                <div style={{ width: '100%', borderTop: '2px solid #c9d6db', marginTop: 6 }} />
+
+                {/* Row for Tmin: tree, complement, metadata (branches/cords in brackets) */}
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ maxWidth: 1080, width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ flex: '0 0 520', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, color: '#1d6a96' }}>Tmin (Árbol de expansión mínima)</h4>
+                  <div style={{ padding: 6 }}>
+                    {minResultado ? renderGraph(minResultado.vertices, minResultado.aristas, false, esDirigido, { highlightNodes: new Set((minCenter||[]).map(i => (minResultado.vertices[i] && (minResultado.vertices[i].id || minResultado.vertices[i].etiqueta)) )), highlightEdges: new Set(minBicenterEdgeId ? [minBicenterEdgeId] : []) }) : <div style={{ width: 520, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #c9d6db', borderRadius: 8 }}>Presione «Generar árboles de expansión»</div>}
+                  </div>
+                </div>
+                <div style={{ flex: '0 0 520', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ flex: '0 0 520', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1d6a96' }}>Complemento de Tmin</div>
+                    <div style={{ marginTop: 6 }}>{minComplement ? renderGraph(minComplement.vertices, minComplement.aristas, false, esDirigido) : <div style={{ width: 520, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>∅</div>}</div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+
+              {/* Lists for Tmin placed below the Tmin row to avoid overlapping the complement visualization */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+              <div style={{ maxWidth: 1080, width: '100%', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: '1 1 60%', color: '#000', wordBreak: 'break-word' }}>
+                  <strong>Ramas (Tmin):</strong>
+                  <div style={{ marginTop: 6 }}>{minResultado && minResultado.aristas && minResultado.aristas.length ? formatEdgeList(minResultado.vertices, minResultado.aristas) : "{}"}</div>
+                </div>
+                <div style={{ flex: '1 1 35%', color: '#000', wordBreak: 'break-word' }}>
+                  <strong>Cuerdas (complemento):</strong>
+                  <div style={{ marginTop: 6 }}>{minComplement && minComplement.aristas && minComplement.aristas.length ? formatEdgeList(minComplement.vertices, minComplement.aristas) : "{}"}</div>
+                </div>
+              </div>
+            </div>
+              {/* Row for Tmax */}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ maxWidth: 1080, width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ flex: '0 0 520', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, color: '#1d6a96' }}>Tmax (Árbol de expansión máxima)</h4>
+                  <div style={{ padding: 6 }}>
+                    {maxResultado ? renderGraph(maxResultado.vertices, maxResultado.aristas, false, esDirigido, { highlightNodes: new Set((maxCenter||[]).map(i => (maxResultado.vertices[i] && (maxResultado.vertices[i].id || maxResultado.vertices[i].etiqueta)) )), highlightEdges: new Set(maxBicenterEdgeId ? [maxBicenterEdgeId] : []) }) : <div style={{ width: 520, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #c9d6db', borderRadius: 8 }}>Presione «Generar árboles de expansión»</div>}
+                  </div>
+                </div>
+                <div style={{ flex: '0 0 520', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ flex: '0 0 520', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 'bold', color: '#1d6a96' }}>Complemento de Tmax</div>
+                    <div style={{ marginTop: 6 }}>{maxComplement ? renderGraph(maxComplement.vertices, maxComplement.aristas, false, esDirigido) : <div style={{ width: 520, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>∅</div>}</div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+              {/* Lists for Tmax placed below the Tmax row to avoid overlapping the complement visualization */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+              <div style={{ maxWidth: 1040, width: '100%', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: '1 1 60%', color: '#000', wordBreak: 'break-word' }}>
+                  <strong>Ramas (Tmax):</strong>
+                  <div style={{ marginTop: 6 }}>{maxResultado && maxResultado.aristas && maxResultado.aristas.length ? formatEdgeList(maxResultado.vertices, maxResultado.aristas) : "{}"}</div>
+                </div>
+                <div style={{ flex: '1 1 35%', color: '#000', wordBreak: 'break-word' }}>
+                  <strong>Cuerdas (complemento):</strong>
+                  <div style={{ marginTop: 6 }}>{maxComplement && maxComplement.aristas && maxComplement.aristas.length ? formatEdgeList(maxComplement.vertices, maxComplement.aristas) : "{}"}</div>
+                </div>
+              </div>
+            </div>
+
+              {/* Árbol de expansión centrado (comparación entre Tmin y Tmax) */}
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 14 }}>
+              <div style={{ maxWidth: 1080, width: '100%', background: '#f1fbfb', padding: 12, borderRadius: 8, border: '1px solid #d6eaea' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#0b6a86' }}>Árbol de expansión centrado</h4>
+                <p style={{ margin: 0, color: '#283b42' }}><strong>Fórmula:</strong> distancia árbol expansión = (|A1 ∪ A2| - |A1 ∩ A2|) / 2</p>
+                <div style={{ marginTop: 8, color: '#000' }}>
+                  {/* Small visualizations for each center */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ fontWeight: '700', color: '#0b6a86' }}>Grafo Centro (Tmin)</div>
+                      <div style={{ marginTop: 6, width: 520, height: 420 }}>{(() => {
+                        if (!minResultado || !minResultado.vertices) return <div style={{ width: 520, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>∅</div>;
+                        const sub = extractCenterSubgraph(minResultado.vertices, minResultado.aristas, minCenter || [], 0);
+                        return (<div style={{ width: 520, height: 420 }}>{renderGraph(sub.vertices, sub.aristas, false, esDirigido, { highlightNodes: new Set(sub.centersMapped || []) })}</div>);
+                      })()}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ fontWeight: '700', color: '#0b6a86' }}>Grafo Centro (Tmax)</div>
+                      <div style={{ marginTop: 6, width: 520, height: 420 }}>{(() => {
+                        if (!maxResultado || !maxResultado.vertices) return <div style={{ width: 520, height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>∅</div>;
+                        const sub = extractCenterSubgraph(maxResultado.vertices, maxResultado.aristas, maxCenter || [], 0);
+                        return (<div style={{ width: 520, height: 420 }}>{renderGraph(sub.vertices, sub.aristas, false, esDirigido, { highlightNodes: new Set(sub.centersMapped || []) })}</div>);
+                      })()}</div>
+                    </div>
+                  </div>
+                  <div><strong>A_min:</strong> {formatEdgeList(minResultado ? minResultado.vertices : [], minResultado ? minResultado.aristas : [])}</div>
+                  <div><strong>A_max:</strong> {formatEdgeList(maxResultado ? maxResultado.vertices : [], maxResultado ? maxResultado.aristas : [])}</div>
+                  <div style={{ marginTop: 6 }}><strong>Centro/Bicentro (Tmin):</strong> {minResultado ? ((minCenter || []).length === 1 ? (minResultado.vertices[minCenter[0]]?.etiqueta || `V${minResultado.vertices[minCenter[0]]?.id}`) : (minCenter || []).length === 2 ? ((minResultado.vertices[minCenter[0]]?.etiqueta || `V${minResultado.vertices[minCenter[0]]?.id}`) + ' — ' + (minResultado.vertices[minCenter[1]]?.etiqueta || `V${minResultado.vertices[minCenter[1]]?.id}`)) : '∅') : '∅'}</div>
+                  <div style={{ marginTop: 6 }}><strong>Centro/Bicentro (Tmax):</strong> {maxResultado ? ((maxCenter || []).length === 1 ? (maxResultado.vertices[maxCenter[0]]?.etiqueta || `V${maxResultado.vertices[maxCenter[0]]?.id}`) : (maxCenter || []).length === 2 ? ((maxResultado.vertices[maxCenter[0]]?.etiqueta || `V${maxResultado.vertices[maxCenter[0]]?.id}`) + ' — ' + (maxResultado.vertices[maxCenter[1]]?.etiqueta || `V${maxResultado.vertices[maxCenter[1]]?.id}`)) : '∅') : '∅'}</div>
+                  <div style={{ marginTop: 6 }}><strong>|A1 ∪ A2|:</strong> {unionSet.size} &nbsp; <strong>|A1 ∩ A2|:</strong> {intersectionSet.size}</div>
+                  <div style={{ marginTop: 6, fontWeight: '700' }}><strong>Distancia árbol expansión:</strong> {isNaN(expansionDistance) ? '∅' : expansionDistance}</div>
+                </div>
+              </div>
+                </div>
+              </>
+            )}
           </div>
           <div style={{ marginTop: "12px", display: "flex", gap: "10px", justifyContent: "center" }}>
             <button className="boton volver" onClick={onBack}>⬅ Volver</button>

@@ -137,7 +137,7 @@ body {
     padding: 5px 10px;
   margin-top: 5px;
   cursor: pointer;
-  background-color: #75379b;
+      background-color: #1d6a96; /* Use same primary color as menu for consistency */
   color: white;
   border: none;
   border-radius: 6px;

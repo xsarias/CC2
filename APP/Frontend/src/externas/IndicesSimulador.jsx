@@ -473,7 +473,7 @@ export default function IndicesSimulador({ onBack }) {
       >
         <defs>
           <marker id="mArrow" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto">
-            <path d="M0,0 L10,4 L0,8 z" fill="#111" />
+            <path d="M0,0 L10,4 L0,8 z" fill="#1d6a96" />
           </marker>
         </defs>
 
@@ -481,7 +481,7 @@ export default function IndicesSimulador({ onBack }) {
           <path
             key={i}
             d={`M ${p.x1} ${p.y1} C ${p.cp1x} ${p.cp1y}, ${p.cp2x} ${p.cp2y}, ${p.x2} ${p.y2}`}
-            stroke={p.type === "index->data" ? "#0b6a86" : p.type === "nivel0->index" ? "#b04d16" : "#1b6fa5"}
+            stroke="#1d6a96"
             strokeWidth={2.6}
             fill="none"
             markerEnd="url(#mArrow)"

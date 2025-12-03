@@ -37,16 +37,18 @@ table tr:not(.resaltado) {
 ------------------------- */
 .boton,
 .boton_agregar {
-  background: #0b6a86;
+  /* Unified primary button style to match main menu buttons */
+  background: #0b6a86; /* updated primary color */
   color: white;
   padding: 8px 12px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .boton_agregar {
-  background: #1b6fa5;
+  background: #0b6a86; /* keep same primary color for add buttons */
 }
 
 /* -------------------------

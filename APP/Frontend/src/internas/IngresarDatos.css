@@ -41,6 +41,9 @@
   margin: 0 4px;
   border: none;
   border-radius: 6px;
+.boton_agregar {
+  background-color:  #0b6a86; /* updated */
+  color: white;
   cursor: pointer;
   font-size: 14px;
   color: #283b42;
@@ -56,26 +59,26 @@
 
 /* Colores específicos */
 .boton_agregar {
-  background-color:  #1d6a96;
+  background-color:  #0b6a86;
   color: white;
 }
 .boton_agregar:hover {
-  background-color: #85b8cb;
+  background-color: #6aaeb9;
 }
 
 .boton {
-  background-color: #1d6a96;
+  background-color:#0b6a86;
   color: white;
 }
 .boton:hover {
-  background-color:#85b8cb;;
+  background-color:#6aaeb9;
 }
 
 .boton.eliminar {
-  background-color: #1d6a96;;
+  background-color: #0b6a86;
 }
 .boton.eliminar:hover {
-  background-color: #85b8cb;
+  background-color: #6aaeb9;
 }
 
 /* === TABLA DINÁMICA VERTICAL (base) === */
@@ -193,6 +196,13 @@
   border-radius: 6px;
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
   transition: background 0.3s;
+}
+.volver{
+  background-color: #0b6a86; /* updated */
+}
+/* keep .volver consistent with non-menu buttons */
+.volver{
+  background-color: #0b6a86;
 }
 /* Estado especial: celda actual o activa */
 .tabla-hashmod td.activo {
