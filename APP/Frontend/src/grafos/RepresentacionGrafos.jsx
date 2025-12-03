@@ -21,6 +21,7 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
   const [matrizTitulo, setMatrizTitulo] = useState("");
   const [matrizFilaHeaders, setMatrizFilaHeaders] = useState([]);
   const [matrizColHeaders, setMatrizColHeaders] = useState([]);
+  const [mostrarArbol, setMostrarArbol] = useState(false);
   const [ramas, setRamas] = useState([]);   // aristas del árbol
   const [cuerdas, setCuerdas] = useState([]); // aristas fuera del árbol
 
@@ -403,6 +404,141 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
 
     return { ramas, cuerdas, ramasIdx };
   };
+  const construirGrafoDeRamas = (ramasLocales) => {
+    const adj = new Map();
+    ramasLocales.forEach((a, idx) => {
+      const u = a.origen;
+      const v = a.destino;
+      if (!adj.has(u)) adj.set(u, []);
+      if (!adj.has(v)) adj.set(v, []);
+      adj.get(u).push({ vecino: v, edgeIndex: idx });
+      adj.get(v).push({ vecino: u, edgeIndex: idx });
+    });
+    return adj;
+  };
+
+  const encontrarCaminoEnArbol = (ramasLocales, origen, destino) => {
+    const adj = construirGrafoDeRamas(ramasLocales);
+    const stack = [{ v: origen, parentEdge: -1 }];
+    const visited = new Set([origen]);
+    const parent = new Map(); // v -> { prev, edgeIndex }
+
+    while (stack.length > 0) {
+      const { v } = stack.pop();
+      if (v === destino) break;
+      const vecinos = adj.get(v) || [];
+      for (const { vecino, edgeIndex } of vecinos) {
+        if (!visited.has(vecino)) {
+          visited.add(vecino);
+          parent.set(vecino, { prev: v, edgeIndex });
+          stack.push({ v: vecino, parentEdge: edgeIndex });
+        }
+      }
+    }
+
+    if (!parent.has(destino) && origen !== destino) return [];
+
+    // reconstruir camino como índices de ramasLocales
+    const pathEdges = [];
+    let cur = destino;
+    while (cur !== origen) {
+      const info = parent.get(cur);
+      if (!info) break;
+      pathEdges.push(info.edgeIndex);
+      cur = info.prev;
+    }
+    return pathEdges.reverse();
+  };
+  const obtenerMatrizCircuitosFundamentales = (ramasLocales, cuerdasLocales) => {
+    const m = aristas.length;
+    const numCuerdas = cuerdasLocales.length;
+    const matriz = Array(numCuerdas)
+      .fill()
+      .map(() => Array(m).fill(0));
+
+    // mapa arista global -> índice
+    const edgeIndexMap = new Map();
+    aristas.forEach((a, idx) => edgeIndexMap.set(a.id, idx));
+
+    cuerdasLocales.forEach((cuerda, i) => {
+      const { origen, destino } = cuerda;
+      // camino en el árbol entre origen y destino
+      const pathRamasIdx = encontrarCaminoEnArbol(ramasLocales, origen, destino);
+
+      // marcar la cuerda en la matriz
+      const idxGlobalCuerda = edgeIndexMap.get(cuerda.id);
+      if (idxGlobalCuerda != null) matriz[i][idxGlobalCuerda] = 1;
+
+      // marcar las ramas del camino
+      pathRamasIdx.forEach((idxRamaLocal) => {
+        const rama = ramasLocales[idxRamaLocal];
+        const idxGlobalRama = edgeIndexMap.get(rama.id);
+        if (idxGlobalRama != null) matriz[i][idxGlobalRama] = 1;
+      });
+    });
+
+    return matriz;
+  };
+  const obtenerMatrizCortesFundamentales = (ramasLocales, cuerdasLocales) => {
+    const m = aristas.length;
+    const numRamas = ramasLocales.length;
+    const matriz = Array(numRamas)
+      .fill()
+      .map(() => Array(m).fill(0));
+
+    const edgeIndexMap = new Map();
+    aristas.forEach((a, idx) => edgeIndexMap.set(a.id, idx));
+
+    // construir grafo completo del árbol para reusar
+    const adjTree = construirGrafoDeRamas(ramasLocales);
+
+    ramasLocales.forEach((rama, i) => {
+      const { origen, destino } = rama;
+
+      // quitar temporalmente la rama en el árbol
+      const adj = new Map();
+      for (const [v, lista] of adjTree.entries()) {
+        adj.set(
+          v,
+          lista.filter(
+            (e) =>
+              !(
+                (v === origen && e.vecino === destino) ||
+                (v === destino && e.vecino === origen)
+              )
+          )
+        );
+      }
+
+      // componente 1: vértices alcanzables desde 'origen'
+      const comp1 = new Set();
+      const stack = [origen];
+      comp1.add(origen);
+      while (stack.length > 0) {
+        const v = stack.pop();
+        const vecinos = adj.get(v) || [];
+        for (const { vecino } of vecinos) {
+          if (!comp1.has(vecino)) {
+            comp1.add(vecino);
+            stack.push(vecino);
+          }
+        }
+      }
+
+      // cualquier arista que conecta comp1 con su complemento pertenece al corte
+      aristas.forEach((a, idxGlobal) => {
+        const u = a.origen;
+        const v = a.destino;
+        const en1 = comp1.has(u);
+        const en2 = comp1.has(v);
+        if (en1 !== en2) {
+          matriz[i][idxGlobal] = 1;
+        }
+      });
+    });
+
+    return matriz;
+  };
 
 
 
@@ -424,6 +560,9 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
     setMenuMatricesAbierto(false);
     setMatrizFilaHeaders([]);
     setMatrizColHeaders([]);
+    // al inicio de handleMenuOpcion:
+    setMostrarArbol(false);
+
     if (vertices.length === 0) {
       alert("Primero construya el grafo.");
       return;
@@ -458,10 +597,37 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
         titulo = "Matriz de adyacencia (aristas)";
         setMatrizFilaHeaders(headers);
         setMatrizColHeaders(headers);
+
         break;
       }
 
-      case "matrizCircuitos":
+      case "matrizCircuitos": {
+        if (esDirigido) {
+          alert("La matriz de circuitos se define sobre el grafo no dirigido.");
+          return;
+        }
+        const { ramas, cuerdas } = calcularArbolMinimo();
+        setRamas(ramas);
+        setCuerdas(cuerdas);
+
+        const matrizCF = obtenerMatrizCircuitosFundamentales(ramas, cuerdas);
+        matriz = matrizCF;
+        titulo = "Matriz de circuitos (filas: circuitos, columnas: aristas)";
+
+        // una fila por circuito (una por cuerda)
+        setMatrizFilaHeaders(
+          cuerdas.map((_, i) => `C${i + 1}`)
+        );
+        setMatrizColHeaders(
+          aristas.map((a, idx) => {
+            const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+            const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+            return `e${idx + 1}: ${l1}-${l2}`;
+          })
+        );
+        break;
+      }
+
       case "circuitosFundamentales": {
         if (esDirigido) {
           alert("Los circuitos fundamentales se definen sobre el grafo no dirigido.");
@@ -470,14 +636,50 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
         const { ramas, cuerdas } = calcularArbolMinimo();
         setRamas(ramas);
         setCuerdas(cuerdas);
-        // matriz la llenamos en el siguiente paso
+        setMostrarArbol(true); // mostrar árbol + cuerdas
+
+        const matrizCF = obtenerMatrizCircuitosFundamentales(ramas, cuerdas);
+        matriz = matrizCF;
         titulo = "Matriz de circuitos fundamentales (filas: circuitos, columnas: aristas)";
-        // de momento, matriz vacía para que veas el título
-        matriz = [];
+        setMatrizFilaHeaders(cuerdas.map((_, i) => `CF${i + 1}`));
+        setMatrizColHeaders(
+          aristas.map((a, idx) => {
+            const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+            const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+            return `e${idx + 1}: ${l1}-${l2}`;
+          })
+        );
         break;
       }
 
-      case "conjuntosCorte":
+
+      case "conjuntosCorte": {
+        if (esDirigido) {
+          alert("La matriz de conjuntos de corte se define sobre el grafo no dirigido.");
+          return;
+        }
+        const { ramas, cuerdas } = calcularArbolMinimo();
+        setRamas(ramas);
+        setCuerdas(cuerdas);
+
+        const matrizKF = obtenerMatrizCortesFundamentales(ramas, cuerdas);
+        matriz = matrizKF;
+        titulo = "Matriz de conjuntos de corte (filas: cortes, columnas: aristas)";
+
+        // una fila por corte (una por rama)
+        setMatrizFilaHeaders(
+          ramas.map((_, i) => `K${i + 1}`)
+        );
+        setMatrizColHeaders(
+          aristas.map((a, idx) => {
+            const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+            const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+            return `e${idx + 1}: ${l1}-${l2}`;
+          })
+        );
+        break;
+      }
+
       case "conjuntosCorteFundamentales": {
         if (esDirigido) {
           alert("Los cortes fundamentales se definen sobre el grafo no dirigido.");
@@ -486,10 +688,22 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
         const { ramas, cuerdas } = calcularArbolMinimo();
         setRamas(ramas);
         setCuerdas(cuerdas);
+        setMostrarArbol(true); // mostrar árbol + cuerdas
+
+        const matrizKF = obtenerMatrizCortesFundamentales(ramas, cuerdas);
+        matriz = matrizKF;
         titulo = "Matriz de cortes fundamentales (filas: cortes, columnas: aristas)";
-        matriz = [];
+        setMatrizFilaHeaders(ramas.map((_, i) => `KF${i + 1}`));
+        setMatrizColHeaders(
+          aristas.map((a, idx) => {
+            const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+            const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+            return `e${idx + 1}: ${l1}-${l2}`;
+          })
+        );
         break;
       }
+
         break;
       default:
         break;
@@ -505,6 +719,7 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
 
   const renderSVGGraph = (vs = vertices, es = aristas, width = 520, height = 420) => {
     const map = new Map();
+    const idsRamas = new Set(ramas.map((a) => a.id));
     for (const a of es) {
       const k1 = `${a.origen}-${a.destino}`;
       const k2 = `${a.destino}-${a.origen}`;
@@ -541,6 +756,9 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
             const v1 = vs[arista.origen];
             const v2 = vs[arista.destino];
             if (!v1 || !v2) return null;
+            const esRama = idsRamas.has(arista.id);
+            const strokeColor = esRama ? "#1d6a96" : "#c0392b";
+            const strokeWidth = esRama ? 4 : 2;
 
             // bucles
             if (v1.id === v2.id) {
@@ -1042,7 +1260,54 @@ function RepresentacionGrafos({ initialDirected = false, initialGraph = null, on
       </div>
 
       <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ flex: "1 1 auto" }}>{renderSVGGraph()}</div>
+        <div style={{ flex: "1 1 auto" }}>
+          {mostrarArbol
+            ? renderSVGGraph(vertices, [...ramas, ...cuerdas])
+            : renderSVGGraph()}
+
+        </div>
+        {mostrarArbol && (ramas.length > 0 || cuerdas.length > 0) && (
+          <div
+            style={{
+              marginTop: 8,
+              padding: 8,
+              borderRadius: 6,
+              background: "#f2f8fa",
+              border: "1px solid rgba(34,93,110,0.25)",
+              fontSize: 12,
+              color: "#123d4a",
+            }}
+          >
+            <div style={{ marginBottom: 4, fontWeight: "bold" }}>
+              Árbol y complemento:
+            </div>
+            <div>
+              <strong>Ramas (árbol):</strong>{" "}
+              {ramas.length === 0
+                ? "ninguna"
+                : ramas
+                  .map((a, idx) => {
+                    const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+                    const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+                    return `e${idx + 1}: ${l1}-${l2}`;
+                  })
+                  .join(", ")}
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <strong>Cuerdas (complemento):</strong>{" "}
+              {cuerdas.length === 0
+                ? "ninguna"
+                : cuerdas
+                  .map((a, idx) => {
+                    const l1 = vertices[a.origen]?.etiqueta || `V${a.origen + 1}`;
+                    const l2 = vertices[a.destino]?.etiqueta || `V${a.destino + 1}`;
+                    return `e${idx + 1}: ${l1}-${l2}`;
+                  })
+                  .join(", ")}
+            </div>
+          </div>
+        )}
+
 
         <div style={{ width: 320 }} className="editor-sidebar">
           <div style={{ marginBottom: 8 }}>
