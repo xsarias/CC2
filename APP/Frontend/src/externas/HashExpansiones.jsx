@@ -388,10 +388,10 @@ export default function HashExpansiones({ onBack }) {
           value={clave}
           onChange={(e) => setClave(e.target.value)}
         />
-        <button onClick={agregarClave} className="boton_agregar">
+        <button onClick={agregarClave} className="boton">
           ➕ Insertar
         </button>
-        <button onClick={borrarClave} className="boton eliminar">
+        <button onClick={borrarClave} className="boton">
           ✖️ Eliminar
         </button>
         <button onClick={vaciar} className="boton">

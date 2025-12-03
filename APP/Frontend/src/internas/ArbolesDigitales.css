@@ -132,6 +132,7 @@
   padding: 12px 0;
   margin-top: 20px;
   flex-wrap: wrap;
+  color: #283b42;
 }
 .tabla-frecuencias{
   width: 50%;
@@ -243,4 +244,46 @@
   transform: translateY(-2px);
   /* pequeño efecto de elevación */
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+.boton,
+.boton_agregar {
+  padding: 6px 12px;
+  margin: 0 4px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #283b42;
+  transition: background 0.3s, transform 0.2s;
+}
+.titles_h2{
+  color: #283b42;
+}
+.boton:hover,
+.boton_agregar:hover {
+  transform: scale(1.05);
+}
+
+/* Colores específicos */
+.boton_agregar {
+  background-color:  #1d6a96;
+  color: white;
+}
+.boton_agregar:hover {
+  background-color: #85b8cb;
+}
+
+.boton {
+  background-color: #1d6a96;
+  color: white;
+}
+.boton:hover {
+  background-color:#85b8cb;;
+}
+
+.boton.eliminar {
+  background-color: #1d6a96;;
+}
+.boton.eliminar:hover {
+  background-color: #85b8cb;
 }

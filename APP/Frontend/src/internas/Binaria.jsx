@@ -93,7 +93,7 @@ function Binaria({ onBack }) {
     ) : null;
 
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={{ textAlign: "center" , color: "black"}}>
       <h2>Búsqueda Binaria</h2>
 
       {/* 👉 Pasamos lógica a IngresarDatos */}

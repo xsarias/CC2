@@ -200,9 +200,9 @@ export default function Multiples({ onBack }) {
                     <input type="text" maxLength={1} value={clave} onChange={e => setClave(e.target.value.toUpperCase())} />
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                        <button onClick={agregarLetra} className="botones" disabled={buscando}>➕ Insertar</button>
-                        <button onClick={buscarLetra}  className="botones" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarLetraClick} className="botones" disabled={buscando}>✖️ Eliminar</button>
+                        <button onClick={agregarLetra} className="boton" disabled={buscando}>➕ Insertar</button>
+                        <button onClick={buscarLetra}  className="boton" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarLetraClick} className="boton" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -243,18 +243,18 @@ export default function Multiples({ onBack }) {
                         if (div.requestFullscreen) div.requestFullscreen();
                         else if (div.webkitRequestFullscreen) div.webkitRequestFullscreen(); // Safari
                     }}
-                    className="botones"
+                    className="boton"
                 >
                     ⛶ Expandir
                 </button>
 
             
-                    <button onClick={guardarArchivo} className="botones">💾 Guardar archivo</button>
-                    <label className="botones" style={{ cursor: "pointer" }}>
+                    <button onClick={guardarArchivo} className="boton">💾 Guardar archivo</button>
+                    <label className="boton" style={{ cursor: "pointer" }}>
                         📂 Cargar archivo
                         <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
                     </label>
-                    <button onClick={onBack} className="botones">⬅ Volver</button>
+                    <button onClick={onBack} className="boton">⬅ Volver</button>
                 
             </section>
         </>

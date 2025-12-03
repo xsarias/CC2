@@ -394,9 +394,9 @@ export default function HashTruncamiento({ onDataChange, onBack }) {
           onChange={(e) => setClave(e.target.value)}
           placeholder={`(${tamanoClave} dígitos)`}
         />
-        <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
+        <button onClick={agregarClave} className="boton">➕ Insertar</button>
         <button onClick={buscarClave} className="boton">🔍 Buscar</button>
-        <button onClick={borrarClave} className="boton eliminar">✖️ Eliminar</button>
+        <button onClick={borrarClave} className="boton">✖️ Eliminar</button>
         <button onClick={vaciar} className="boton">♻ Vaciar</button>
       </div>
 

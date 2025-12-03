@@ -158,9 +158,9 @@ function IngresarDatos({ onDataChange, onBuscar, currentIndex, foundIndex }) {
       {/* Input + botones, mismo estilo que panel-controles */}
       <div className="panel-controles">
 
-        <button onClick={agregarClave} className="boton_agregar">➕ Insertar</button>
+        <button onClick={agregarClave} className="boton">➕ Insertar</button>
         <button onClick={buscarClave} className="boton">🔎 Buscar</button>
-        <button onClick={eliminarClave} className="boton eliminar">✖️ Eliminar</button>
+        <button onClick={eliminarClave} className="boton">✖️ Eliminar</button>
         <button onClick={vaciar} className="boton">♻ Vaciar</button>
       </div>
 

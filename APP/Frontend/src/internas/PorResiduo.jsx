@@ -224,10 +224,10 @@ function PorResiduo({ onBack }) {
                         value={clave}
                         onChange={e => setClave(e.target.value.toUpperCase())}
                     />
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                        <button onClick={agregarClave}  className="botones" disabled={buscando}>➕ Insertar</button>
-                        <button onClick={buscarEnArbol} className="botones" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarClave} className="botones" disabled={buscando}>✖️ Eliminar</button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px", color: "#283b42" }}>
+                        <button onClick={agregarClave}  className="boton" disabled={buscando}>➕ Insertar</button>
+                        <button onClick={buscarEnArbol} className="boton" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarClave} className="boton" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -299,14 +299,14 @@ function PorResiduo({ onBack }) {
                         const div = document.querySelector(".arbol-grafico");
                         if (div.requestFullscreen) div.requestFullscreen();
                     }}
-                    className="botones"
+                    className="boton"
                 >
                     ⛶ Expandir
                 </button>
 
-                <button onClick={guardarArbol} className="botones">💾 Guardar</button>
-                <button onClick={cargarArbol} className="botones">📂 Cargar</button>
-                <button onClick={onBack} className="botones">⬅ Volver</button>
+                <button onClick={guardarArbol} className="boton">💾 Guardar</button>
+                <button onClick={cargarArbol} className="boton">📂 Cargar</button>
+                <button onClick={onBack} className="boton">⬅ Volver</button>
             </section>
 
         </>

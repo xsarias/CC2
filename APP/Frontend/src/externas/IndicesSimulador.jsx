@@ -650,7 +650,7 @@ export default function IndicesSimulador({ onBack }) {
           ) : (
             <div style={{ color: "#666" }}>Genera para ver datos</div>
           )}
-          <div style={{ marginTop: 10, fontWeight: 700, fontSize: 16 }}>Archivo de Datos</div>
+          <div style={{ marginTop: 10, fontWeight: 700, fontSize: 16 }}>Estructura de Datos</div>
         </div>
       </div>
     </div>

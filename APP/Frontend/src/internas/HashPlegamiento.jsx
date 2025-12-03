@@ -457,13 +457,13 @@ export default function HashPlegamiento({ onDataChange, onBack }) {
           onChange={(e) => setClave(e.target.value)}
           placeholder={`(${tamanoClave} dígitos)`}
         />
-        <button onClick={agregarClave} className="boton_agregar">
+        <button onClick={agregarClave} className="boton">
           ➕ Insertar
         </button>
         <button onClick={buscarClave} className="boton">
           🔍 Buscar
         </button>
-        <button onClick={borrarClave} className="boton eliminar">
+        <button onClick={borrarClave} className="boton">
           ✖️ Eliminar
         </button>
         <button onClick={vaciar} className="boton">

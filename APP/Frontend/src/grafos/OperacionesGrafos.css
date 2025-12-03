@@ -6,6 +6,7 @@
    border-radius: 12px;
    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
    border: 1px solid rgba(15,106,126,0.06);
+   color: black;
 }
 
 .operaciones-grafos .crear-card {
@@ -52,3 +53,56 @@
 }
 
 
+/* Botón secundario: un poco más azulado para que destaque sobre el panel */
+.operaciones-grafos .full-width-btn.secondary {
+   background: #dfeef1;
+   color: #0f6a7e;
+   border: 1px solid rgba(15,106,126,0.18);
+ }
+ 
+ /* Botones genéricos */
+ .operaciones-grafos .boton {
+   background: #0f6a7e;
+   color: #fff;
+   border-radius: 8px;
+   border: none;
+   padding: 6px 10px;
+ }
+ 
+ .operaciones-grafos .boton_agregar {
+   background: #138ea8;
+   color: #fff;
+ }
+ 
+ /* Inputs pequeños / de texto dentro del panel */
+ .operaciones-grafos .input-chico,
+ .operaciones-grafos .input-clave {
+   background: #f4fafb;
+   color: #123d4a;
+   border: 1px solid rgba(34,93,110,0.25);
+ }
+ 
+ /* Bloques laterales (listas de vértices/aristas) con fondo azulado suave */
+ .operaciones-grafos .bloque {
+   background: #eaf4f6;
+ }
+/* Panel lateral del editor (lista de aristas/vértices) */
+.operaciones-grafos .editor-sidebar {
+   background: #f0f7f8;
+   border-radius: 10px;
+   padding: 8px;
+ }
+ /* Modal de aristas dentro de operaciones-grafos */
+.operaciones-grafos .modal-arista {
+   background: #e7f0ee;
+   border-radius: 12px;
+   border: 3px solid #1d6a96;
+   box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+ }
+ 
+ .operaciones-grafos .modal-arista input[type="text"] {
+   background: #f4fafb;
+   color: #000;
+ }
+ 
+  

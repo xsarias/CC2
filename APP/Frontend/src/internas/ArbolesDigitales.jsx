@@ -186,9 +186,9 @@ function ArbolesDigitales({ onBack }) {
                     />
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "5px" }}>
-                        <button onClick={agregarClave} className="botones" disabled={buscando}>➕ Añadir</button>
-                        <button onClick={buscarEnArbol} className="botones" disabled={buscando}>🔎 Buscar</button>
-                        <button onClick={eliminarClave} className="botones" disabled={buscando}>✖️ Eliminar</button>
+                        <button onClick={agregarClave} className="boton" disabled={buscando}>➕ Añadir</button>
+                        <button onClick={buscarEnArbol} className="boton" disabled={buscando}>🔎 Buscar</button>
+                        <button onClick={eliminarClave} className="boton" disabled={buscando}>✖️ Eliminar</button>
                     </div>
 
                     {mensaje && <p className="mensaje-alerta">{mensaje}</p>}
@@ -290,18 +290,18 @@ function ArbolesDigitales({ onBack }) {
 
             {/* Botones fuera del árbol */}
             <section className="botones-accion">
-                <button className="botones" onClick={() => setExpandido(true)}>
+                <button className="boton" onClick={() => setExpandido(true)}>
                     ⛶ Expandir
                 </button>
 
-                <button onClick={guardarArchivo} className="botones">💾 Guardar archivo</button>
+                <button onClick={guardarArchivo} className="boton">💾 Guardar archivo</button>
 
-                <label className="botones" style={{ cursor: "pointer" }}>
+                <label className="boton" style={{ cursor: "pointer" }}>
                     📂 Cargar archivo
                     <input type="file" accept=".json" onChange={cargarArchivo} style={{ display: "none" }} />
                 </label>
 
-                <button onClick={onBack} className="botones">⬅ Volver</button>
+                <button onClick={onBack} className="boton">⬅ Volver</button>
             </section>
 
         </>
